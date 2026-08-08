@@ -36,8 +36,9 @@ export default function FinalResults() {
           <div className="flex flex-col gap-1 items-center">
             <span className="text-5xl filter drop-shadow-[0_0_10px_rgba(234,179,8,0.45)] animate-bounce">🏆</span>
             <h1 className="font-display font-black text-2xl md:text-3xl tracking-tight text-white uppercase mt-4 select-none">
-              CHAMPIONSHIP COMPLETE
+              QUIZ COMPETITION COMPLETE
             </h1>
+
             <p className="font-sans font-semibold text-xs text-yellow-500 uppercase tracking-widest mt-1">
               Grand Scorecard Summary
             </p>
