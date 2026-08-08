@@ -118,15 +118,16 @@ export default function FinalResults() {
             <svg className="w-5 h-5 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
-            <span>RESTART CHAMPIONSHIP</span>
+            <span>RESTART COMPETITION</span>
           </button>
         </motion.div>
       </main>
 
       {/* Footer copyright */}
-      <footer className="text-center text-[10px] text-gray-500 tracking-widest uppercase select-none z-10 mt-6">
-        © 2026 Chrono Health Academy • Championship Final Results
+      <footer className="text-center text-[9px] md:text-xs text-gray-500 tracking-wider uppercase select-none z-10 mt-6 leading-normal max-w-lg">
+        © 2026 Priyadarshini Bhagwati College of Engineering, Nagpur <span className="block md:inline md:ml-1.5">• Department of Computer Science & Engineering</span>
       </footer>
+
     </div>
   );
 }

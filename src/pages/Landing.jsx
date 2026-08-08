@@ -60,7 +60,7 @@ export default function Landing() {
             onClick={startQuiz}
             className="w-full py-4 mt-1.5 rounded-2xl font-display font-black text-base md:text-lg tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] active:scale-95 cursor-pointer pointer-events-auto flex items-center justify-center gap-2 group"
           >
-            <span>START QUIZ CHAMPIONSHIP</span>
+            <span>START QUIZ COMPETITION</span>
             <svg className="w-5 h-5 transition-transform group-hover:translate-x-1.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -69,9 +69,10 @@ export default function Landing() {
       </main>
 
       {/* Footer Branding */}
-      <footer className="text-center text-[10px] md:text-xs text-gray-500 tracking-widest uppercase select-none z-10">
-        © 2026 Chrono Health Academy • Excellence in Academic Trivia
+      <footer className="text-center text-[9px] md:text-xs text-gray-500 tracking-wider uppercase select-none z-10 max-w-lg leading-normal">
+        © 2026 Priyadarshini Bhagwati College of Engineering, Nagpur <span className="block md:inline md:ml-1.5">• Department of Computer Science & Engineering</span>
       </footer>
+
     </div>
   );
 }

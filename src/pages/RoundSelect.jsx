@@ -31,7 +31,8 @@ export default function RoundSelect() {
           className="glass-panel p-5 md:p-6 rounded-2xl w-full flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left select-none border border-white/8"
         >
           <div>
-            <h2 className="font-display font-black text-lg md:text-xl tracking-wide text-white uppercase">Championship Standing</h2>
+            <h2 className="font-display font-black text-lg md:text-xl tracking-wide text-white uppercase">Competition Standing</h2>
+
             <p className="font-sans text-xs md:text-sm text-gray-400 mt-1">Select a category below to test your abilities.</p>
           </div>
           <div className="flex items-center gap-6 font-display">
