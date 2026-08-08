@@ -3,602 +3,618 @@ import * as THREE from 'three';
 
 export default function Ambient3DScene({ currentRound }) {
   const canvasRef = useRef(null);
+  const roundRef = useRef(currentRound);
+  
+  // Track mouse coordinates for interactive parallax drift
+  const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+
+  // Update round ref whenever prop changes
+  useEffect(() => {
+    roundRef.current = currentRound;
+  }, [currentRound]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Device detection
     const width = window.innerWidth;
     const isMobile = width < 768;
-    
-    // 1. Setup Renderer & Scene
+
+    // 1. Scene setup
     const scene = new THREE.Scene();
     
-    // Set initial background based on active round
     const getBgColor = (round) => {
       switch (round) {
-        case 'movies': return 0x0a0104; // Deep cinematic maroon/black
-        case 'gk': return 0x010c12;     // Deep teal/black
-        case 'history': return 0x120e03; // Warm bronze/black
-        case 'riddles': return 0x0c0114; // Mysterious indigo/black
-        case 'tech': return 0x00080f;    // Futuristic dark blue/black
-        default: return 0x030008;       // Landing space dark purple
+        case 'movies': return 0x070002;
+        case 'gk': return 0x00060a;
+        case 'history': return 0x0a0701;
+        case 'riddles': return 0x05000a;
+        case 'tech': return 0x000408;
+        default: return 0x020005; // Landing page
       }
     };
-    
-    scene.background = new THREE.Color(getBgColor(currentRound));
-    scene.fog = new THREE.FogExp2(getBgColor(currentRound), 0.05);
 
+    const initialBg = getBgColor(currentRound);
+    scene.background = new THREE.Color(initialBg);
+    scene.fog = new THREE.FogExp2(initialBg, 0.06);
+
+    // 2. Camera setup
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.z = 10;
+    // Start with a default position
+    camera.position.set(0, 0, 8);
+    let targetCameraZ = 8;
+    let transitionAngle = 0;
 
+    // 3. Renderer setup
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
-      antialias: !isMobile, // Disable antialiasing on mobile for performance
+      antialias: !isMobile,
       alpha: false,
       powerPreference: "high-performance"
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // 2. Setup Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    // 4. Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
     scene.add(ambientLight);
 
-    const mainLight = new THREE.PointLight(0xffffff, 1.5, 50);
+    const mainLight = new THREE.PointLight(0xffffff, 2.0, 40);
     mainLight.position.set(5, 5, 5);
     scene.add(mainLight);
 
-    const colorLight = new THREE.PointLight(0xaa3bff, 2, 30);
-    colorLight.position.set(-5, -3, 2);
+    const colorLight = new THREE.PointLight(0xaa3bff, 3.0, 30);
+    colorLight.position.set(-6, -4, 2);
     scene.add(colorLight);
 
-    // 3. Create Group for objects
-    const group = new THREE.Group();
-    scene.add(group);
+    // 5. Asset Groups
+    // We maintain a container that holds the mesh group for the active round
+    const environmentGroup = new THREE.Group();
+    scene.add(environmentGroup);
 
-    // Reusable structures
-    let particles = null;
-    let particleCount = isMobile ? 80 : 350; // Drastically reduced on mobile
-    let particleGeometry = null;
-    let particleMaterial = null;
+    // Grid helper for Tech round
     let gridHelper = null;
 
-    // Track active rotation and updates in animation loop
+    // Particle system
+    const particleCount = isMobile ? 60 : 300;
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+
+    // Set initial particles
+    for (let i = 0; i < particleCount; i++) {
+      particlePositions[i * 3] = (Math.random() - 0.5) * 16;
+      particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
+
+      const col = new THREE.Color(0xaa3bff);
+      particleColors[i * 3] = col.r;
+      particleColors[i * 3 + 1] = col.g;
+      particleColors[i * 3 + 2] = col.b;
+    }
+
+    const particleGeometry = new THREE.BufferGeometry();
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    // Programmatic round soft particle texture
+    const pCanvas = document.createElement('canvas');
+    pCanvas.width = 16;
+    pCanvas.height = 16;
+    const pCtx = pCanvas.getContext('2d');
+    const grad = pCtx.createRadialGradient(8, 8, 0, 8, 8, 8);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    pCtx.fillStyle = grad;
+    pCtx.fillRect(0, 0, 16, 16);
+    const pTexture = new THREE.CanvasTexture(pCanvas);
+
+    const particleMaterial = new THREE.PointsMaterial({
+      size: isMobile ? 0.08 : 0.12,
+      vertexColors: true,
+      map: pTexture,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    // Reusable Materials
+    const goldMat = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 100, specular: 0xffffff });
+    const silverMat = new THREE.MeshPhongMaterial({ color: 0x9ca3af, shininess: 90, specular: 0xffffff });
+    const bronzeMat = new THREE.MeshPhongMaterial({ color: 0xd97706, shininess: 30, specular: 0x553300 });
+    const crystalMat = new THREE.MeshPhongMaterial({ color: 0xa855f7, shininess: 100, transparent: true, opacity: 0.8 });
+    const holographicMat = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true, transparent: true, opacity: 0.4 });
+
+    // Track active round and transition phase
+    let activeEnvironment = null;
+    let transitionProgress = 1.0; // 1.0 = transition complete
+    let previousBgColor = new THREE.Color(initialBg);
+    let targetBgColor = new THREE.Color(initialBg);
     let customUpdate = () => {};
 
-    // 4. Function to populate the scene based on the active round
-    const buildSceneElements = (round) => {
-      // Clear previous group items
-      while (group.children.length > 0) {
-        const obj = group.children[0];
-        group.remove(obj);
+    // 6. Build themed visual assets
+    const buildEnvironment = (round) => {
+      // Clear current elements
+      while (environmentGroup.children.length > 0) {
+        const obj = environmentGroup.children[0];
+        environmentGroup.remove(obj);
+        // Safely dispose geometries/materials
         if (obj.geometry) obj.geometry.dispose();
         if (obj.material) {
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach(m => m.dispose());
-          } else {
-            obj.material.dispose();
-          }
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
         }
       }
 
-      // Clear particles if they exist
-      if (particles) {
-        scene.remove(particles);
-        if (particleGeometry) particleGeometry.dispose();
-        if (particleMaterial) particleMaterial.dispose();
-        particles = null;
-      }
-
-      // Clear grid
       if (gridHelper) {
         scene.remove(gridHelper);
         gridHelper = null;
       }
 
-      // Set target fog & light colors
-      const bgColor = getBgColor(round);
-      scene.background.setHex(bgColor);
-      scene.fog.color.setHex(bgColor);
-
-      const particlePositions = new Float32Array(particleCount * 3);
-      const particleColors = new Float32Array(particleCount * 3);
-      
+      customUpdate = () => {};
       let mainLightColor = 0xffffff;
       let colorLightColor = 0xaa3bff;
-      let particleColorHex = 0xaa3bff;
+      let pColor1 = 0xaa3bff;
+      let pColor2 = 0x8b5cf6;
 
-      // Build objects based on round
       if (round === 'landing' || !round) {
-        // --- LANDING HERO ---
-        mainLightColor = 0xffd700; // Gold
-        colorLightColor = 0x8b5cf6; // Purple
-        particleColorHex = 0xd8b4fe;
+        // --- LANDING Environment (Trophy & Orbits) ---
+        mainLightColor = 0xffd700;
+        colorLightColor = 0xa855f7;
+        pColor1 = 0xffd700;
+        pColor2 = 0xaa3bff;
 
-        // Trophy Mesh (simplified cylinder, ring, cone)
-        const trophyGroup = new THREE.Group();
+        const trophy = new THREE.Group();
         
-        const cupGeo = new THREE.CylinderGeometry(1.5, 0.8, 2.2, 16);
-        const goldMat = new THREE.MeshPhongMaterial({
-          color: 0xffd700,
-          shininess: 100,
-          specular: 0xffffff,
-          emissive: 0x3a2d00
-        });
+        // Base
+        const baseGeo = new THREE.CylinderGeometry(1.2, 1.4, 0.5, 8);
+        const base = new THREE.Mesh(baseGeo, bronzeMat);
+        base.position.y = -1.6;
+        trophy.add(base);
+
+        // Stem
+        const stemGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.0, 8);
+        const stem = new THREE.Mesh(stemGeo, goldMat);
+        stem.position.y = -0.9;
+        trophy.add(stem);
+
+        // Cup
+        const cupGeo = new THREE.CylinderGeometry(1.4, 0.7, 1.8, 16);
         const cup = new THREE.Mesh(cupGeo, goldMat);
         cup.position.y = 0.5;
-        trophyGroup.add(cup);
+        trophy.add(cup);
 
-        const stemGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 8);
-        const stem = new THREE.Mesh(stemGeo, goldMat);
-        stem.position.y = -1;
-        trophyGroup.add(stem);
+        // Handles
+        const handleGeo = new THREE.TorusGeometry(0.7, 0.12, 8, 24, Math.PI);
+        const leftH = new THREE.Mesh(handleGeo, goldMat);
+        leftH.position.set(-1.0, 0.6, 0);
+        leftH.rotation.z = Math.PI / 2;
+        trophy.add(leftH);
 
-        const baseGeo = new THREE.CylinderGeometry(1.2, 1.5, 0.6, 8);
-        const baseMat = new THREE.MeshPhongMaterial({ color: 0x1f2937, shininess: 30 });
-        const base = new THREE.Mesh(baseGeo, baseMat);
-        base.position.y = -1.8;
-        trophyGroup.add(base);
+        const rightH = leftH.clone();
+        rightH.position.x = 1.0;
+        rightH.rotation.z = -Math.PI / 2;
+        trophy.add(rightH);
 
-        // Handles (torus cut in half)
-        const handleGeo = new THREE.TorusGeometry(0.8, 0.15, 8, 24, Math.PI);
-        const leftHandle = new THREE.Mesh(handleGeo, goldMat);
-        leftHandle.position.set(-1.1, 0.6, 0);
-        leftHandle.rotation.z = Math.PI / 2;
-        trophyGroup.add(leftHandle);
+        environmentGroup.add(trophy);
 
-        const rightHandle = leftHandle.clone();
-        rightHandle.position.x = 1.1;
-        rightHandle.rotation.z = -Math.PI / 2;
-        trophyGroup.add(rightHandle);
-
-        group.add(trophyGroup);
-
-        // Ambient floating shapes
+        // Drifting geometric nodes
+        const floatingObjects = [];
         if (!isMobile) {
-          const shapes = [];
-          const geos = [
-            new THREE.BoxGeometry(0.5, 0.5, 0.5),
-            new THREE.IcosahedronGeometry(0.4),
-            new THREE.TorusGeometry(0.3, 0.1, 8, 16)
-          ];
-          const shapeMat = new THREE.MeshPhongMaterial({ color: 0xaa3bff, shininess: 50, transparent: true, opacity: 0.7 });
-
-          for (let i = 0; i < 6; i++) {
-            const mesh = new THREE.Mesh(geos[i % geos.length], shapeMat);
-            mesh.position.set((Math.random() - 0.5) * 12, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 5 - 2);
-            group.add(mesh);
-            shapes.push(mesh);
+          const torusGeo = new THREE.TorusGeometry(0.3, 0.08, 6, 16);
+          const cubeGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+          for (let i = 0; i < 5; i++) {
+            const mesh = new THREE.Mesh(i % 2 === 0 ? torusGeo : cubeGeo, crystalMat);
+            mesh.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6 - 2);
+            environmentGroup.add(mesh);
+            floatingObjects.push(mesh);
           }
-
-          customUpdate = (time) => {
-            trophyGroup.rotation.y = time * 0.5;
-            trophyGroup.rotation.x = Math.sin(time) * 0.1;
-            trophyGroup.position.y = Math.sin(time * 2) * 0.15;
-            
-            shapes.forEach((s, idx) => {
-              s.rotation.x += 0.01;
-              s.rotation.y += 0.015;
-              s.position.y += Math.sin(time + idx) * 0.003;
-            });
-          };
-        } else {
-          customUpdate = (time) => {
-            trophyGroup.rotation.y = time * 0.4;
-          };
         }
 
-        // Particle cloud (Slow space dust)
-        for (let i = 0; i < particleCount; i++) {
-          particlePositions[i * 3] = (Math.random() - 0.5) * 20;
-          particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 12;
-          particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
-
-          const color = new THREE.Color(i % 2 === 0 ? 0xffd700 : 0xaa3bff);
-          particleColors[i * 3] = color.r;
-          particleColors[i * 3 + 1] = color.g;
-          particleColors[i * 3 + 2] = color.b;
-        }
+        customUpdate = (time) => {
+          trophy.rotation.y = time * 0.4;
+          trophy.position.y = Math.sin(time * 1.5) * 0.15;
+          floatingObjects.forEach((m, i) => {
+            m.rotation.x += 0.01;
+            m.rotation.y += 0.012;
+            m.position.y += Math.sin(time + i) * 0.002;
+          });
+        };
 
       } else if (round === 'movies') {
-        // --- MOVIES ROUND (Red Accent, Spotlights & Reels) ---
-        mainLightColor = 0xef4444; // Red
-        colorLightColor = 0xeab308; // Gold
-        particleColorHex = 0xef4444;
+        // --- MOVIES Environment (Spotlights & Reels) ---
+        mainLightColor = 0xef4444;
+        colorLightColor = 0xf59e0b;
+        pColor1 = 0xef4444;
+        pColor2 = 0xf59e0b;
 
-        // Film Reel mesh
         const reelGroup = new THREE.Group();
-        const reelGeo = new THREE.CylinderGeometry(2, 2, 0.4, 32);
-        const silverMat = new THREE.MeshPhongMaterial({ color: 0x9ca3af, shininess: 80, specular: 0xffffff });
-        const mainReel = new THREE.Mesh(reelGeo, silverMat);
-        mainReel.rotation.x = Math.PI / 2;
-        reelGroup.add(mainReel);
+        const reelGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.35, 24);
+        const reel = new THREE.Mesh(reelGeo, silverMat);
+        reel.rotation.x = Math.PI / 2;
+        reelGroup.add(reel);
 
-        // Core/Film strip wrapped
-        const innerGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.35, 16);
-        const filmMat = new THREE.MeshPhongMaterial({ color: 0x111827, shininess: 10 });
-        const innerFilm = new THREE.Mesh(innerGeo, filmMat);
-        innerFilm.rotation.x = Math.PI / 2;
-        reelGroup.add(innerFilm);
+        // Inside dark film core
+        const coreGeo = new THREE.CylinderGeometry(1.65, 1.65, 0.3, 16);
+        const coreMat = new THREE.MeshPhongMaterial({ color: 0x111827, shininess: 15 });
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        core.rotation.x = Math.PI / 2;
+        reelGroup.add(core);
 
-        // Spotlights (cones) representing projector rays
-        const spotGroup = new THREE.Group();
+        // Decorative film holes
+        for (let i = 0; i < 6; i++) {
+          const angle = (i / 6) * Math.PI * 2;
+          const holeGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 12);
+          const hole = new THREE.Mesh(holeGeo, new THREE.MeshBasicMaterial({ color: getBgColor('movies') }));
+          hole.position.set(Math.cos(angle) * 1.0, 0, Math.sin(angle) * 1.0);
+          reelGroup.add(hole);
+        }
+
+        reelGroup.position.set(0, 0, -2);
+        environmentGroup.add(reelGroup);
+
+        // Spotlights
+        const spots = [];
         if (!isMobile) {
-          const coneGeo = new THREE.ConeGeometry(1.5, 8, 16, 1, true);
+          const coneGeo = new THREE.ConeGeometry(1.2, 8, 16, 1, true);
           const coneMat = new THREE.MeshBasicMaterial({
-            color: 0xeab308,
+            color: 0xf59e0b,
             transparent: true,
-            opacity: 0.15,
+            opacity: 0.12,
             blending: THREE.AdditiveBlending,
             side: THREE.DoubleSide
           });
           
-          const spot1 = new THREE.Mesh(coneGeo, coneMat);
-          spot1.position.set(-4, 0, -3);
-          spot1.rotation.z = -Math.PI / 6;
-          spotGroup.add(spot1);
-
-          const spot2 = new THREE.Mesh(coneGeo, coneMat);
-          spot2.position.set(4, 0, -3);
-          spot2.rotation.z = Math.PI / 6;
-          spotGroup.add(spot2);
-
-          group.add(spotGroup);
+          for (let i = 0; i < 2; i++) {
+            const spot = new THREE.Mesh(coneGeo, coneMat);
+            spot.position.set(i === 0 ? -4 : 4, -1, -4);
+            spot.rotation.z = i === 0 ? -Math.PI / 8 : Math.PI / 8;
+            scene.add(spot);
+            spots.push(spot);
+            // Ensure they clean up when unmounting
+            environmentGroup.add(spot);
+          }
         }
-
-        group.add(reelGroup);
 
         customUpdate = (time) => {
           reelGroup.rotation.z = time * 0.3;
-          reelGroup.rotation.y = Math.sin(time * 0.5) * 0.2;
-          
-          if (!isMobile && spotGroup.children.length === 2) {
-            spotGroup.children[0].rotation.y = Math.sin(time) * 0.15;
-            spotGroup.children[1].rotation.y = Math.cos(time) * 0.15;
-          }
+          reelGroup.rotation.y = Math.sin(time * 0.5) * 0.1;
+          spots.forEach((spot, i) => {
+            spot.rotation.x = Math.sin(time + i) * 0.1;
+            spot.rotation.y = Math.cos(time + i) * 0.15;
+          });
         };
-
-        // Rising golden/red carpet dust
-        for (let i = 0; i < particleCount; i++) {
-          particlePositions[i * 3] = (Math.random() - 0.5) * 18;
-          particlePositions[i * 3 + 1] = Math.random() * 8 - 4;
-          particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
-
-          const color = new THREE.Color(i % 3 === 0 ? 0xeab308 : 0xef4444);
-          particleColors[i * 3] = color.r;
-          particleColors[i * 3 + 1] = color.g;
-          particleColors[i * 3 + 2] = color.b;
-        }
 
       } else if (round === 'gk') {
-        // --- GK ROUND (Teal/Blue Global Globe) ---
-        mainLightColor = 0x14b8a6; // Teal
-        colorLightColor = 0x3b82f6; // Blue
-        particleColorHex = 0x14b8a6;
+        // --- GK Environment (Wireframe Globe & Constellation Rings) ---
+        mainLightColor = 0x14b8a6;
+        colorLightColor = 0x3b82f6;
+        pColor1 = 0x14b8a6;
+        pColor2 = 0x3b82f6;
 
-        // Wireframe Globe
-        const globeGroup = new THREE.Group();
-        const sphereGeo = new THREE.SphereGeometry(2, 16, 16);
-        const sphereMat = new THREE.MeshBasicMaterial({
-          color: 0x14b8a6,
-          wireframe: true,
-          transparent: true,
-          opacity: 0.35
-        });
-        const globe = new THREE.Mesh(sphereGeo, sphereMat);
-        globeGroup.add(globe);
+        const globe = new THREE.Group();
 
-        // Orbital ring
-        const ringGeo = new THREE.TorusGeometry(2.6, 0.03, 8, 64);
-        const ringMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6, emissive: 0x002244 });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 3;
-        globeGroup.add(ring);
+        // Core Sphere
+        const coreGeo = new THREE.SphereGeometry(1.8, 18, 18);
+        const globeMesh = new THREE.Mesh(coreGeo, holographicMat);
+        globe.add(globeMesh);
 
-        group.add(globeGroup);
+        // Orbital ring loops
+        const loopGeo = new THREE.TorusGeometry(2.3, 0.03, 6, 48);
+        const loop1 = new THREE.Mesh(loopGeo, new THREE.MeshPhongMaterial({ color: 0x3b82f6, emissive: 0x001133 }));
+        loop1.rotation.x = Math.PI / 4;
+        globe.add(loop1);
+
+        const loop2 = loop1.clone();
+        loop2.rotation.y = Math.PI / 2;
+        loop2.rotation.x = -Math.PI / 4;
+        globe.add(loop2);
+
+        environmentGroup.add(globe);
 
         customUpdate = (time) => {
-          globeGroup.rotation.y = time * 0.2;
-          globeGroup.rotation.x = time * 0.05;
-          ring.rotation.z = -time * 0.4;
+          globe.rotation.y = time * 0.18;
+          globe.rotation.x = time * 0.04;
+          loop1.rotation.z = time * 0.1;
+          loop2.rotation.z = -time * 0.15;
         };
-
-        // Constellation stars/nodes
-        for (let i = 0; i < particleCount; i++) {
-          const u = Math.random();
-          const v = Math.random();
-          const theta = u * 2.0 * Math.PI;
-          const phi = Math.acos(2.0 * v - 1.0);
-          const r = 2.8 + Math.random() * 4; // Orbit around globe
-
-          particlePositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-          particlePositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-          particlePositions[i * 3 + 2] = r * Math.cos(phi) - 2;
-
-          const color = new THREE.Color(i % 2 === 0 ? 0x14b8a6 : 0x3b82f6);
-          particleColors[i * 3] = color.r;
-          particleColors[i * 3 + 1] = color.g;
-          particleColors[i * 3 + 2] = color.b;
-        }
 
       } else if (round === 'history') {
-        // --- HISTORY ROUND (Bronze Temple Columns) ---
-        mainLightColor = 0xd97706; // Amber/Gold
-        colorLightColor = 0xb45309; // Dark Bronze
-        particleColorHex = 0xf59e0b;
+        // --- HISTORY Environment (Temple columns & warm lighting) ---
+        mainLightColor = 0xd97706;
+        colorLightColor = 0xb45309;
+        pColor1 = 0xd97706;
+        pColor2 = 0x78350f;
 
-        // Ancient pillars
-        const columnGroup = new THREE.Group();
-        const pillarGeo = new THREE.CylinderGeometry(0.3, 0.3, 3.5, 8);
-        const baseGeo = new THREE.BoxGeometry(0.8, 0.4, 0.8);
-        const bronzeMat = new THREE.MeshPhongMaterial({ color: 0xb45309, shininess: 10 });
+        const pillars = new THREE.Group();
+        const capGeo = new THREE.BoxGeometry(0.7, 0.3, 0.7);
+        const shaftGeo = new THREE.CylinderGeometry(0.22, 0.22, 3.2, 8);
 
-        // Build 2 columns on sides
-        const col1 = new THREE.Group();
-        col1.add(new THREE.Mesh(pillarGeo, bronzeMat));
-        const base1 = new THREE.Mesh(baseGeo, bronzeMat);
-        base1.position.y = -1.8;
-        const cap1 = new THREE.Mesh(baseGeo, bronzeMat);
-        cap1.position.y = 1.8;
-        col1.add(base1);
-        col1.add(cap1);
-        col1.position.set(-4, -0.5, -2);
-        columnGroup.add(col1);
+        // Draw 3 pillars left, center back, right
+        const spawnPillar = (x, z) => {
+          const pil = new THREE.Group();
+          const shaft = new THREE.Mesh(shaftGeo, bronzeMat);
+          const cap = new THREE.Mesh(capGeo, bronzeMat);
+          cap.position.y = 1.6;
+          const base = new THREE.Mesh(capGeo, bronzeMat);
+          base.position.y = -1.6;
 
-        const col2 = col1.clone();
-        col2.position.x = 4;
-        columnGroup.add(col2);
-
-        group.add(columnGroup);
-
-        customUpdate = (time) => {
-          columnGroup.position.y = Math.sin(time) * 0.1;
-          col1.rotation.y = time * 0.15;
-          col2.rotation.y = -time * 0.15;
+          pil.add(shaft, cap, base);
+          pil.position.set(x, -0.6, z);
+          pillars.add(pil);
         };
 
-        // Rising ash/parchment particles
-        for (let i = 0; i < particleCount; i++) {
-          particlePositions[i * 3] = (Math.random() - 0.5) * 16;
-          particlePositions[i * 3 + 1] = (Math.random() * 10) - 5; // Float upwards
-          particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 6 - 1;
-
-          const color = new THREE.Color(0xf59e0b);
-          particleColors[i * 3] = color.r;
-          particleColors[i * 3 + 1] = color.g;
-          particleColors[i * 3 + 2] = color.b;
+        spawnPillar(-3.5, -2);
+        spawnPillar(3.5, -2);
+        if (!isMobile) {
+          spawnPillar(0, -5);
         }
+
+        environmentGroup.add(pillars);
+
+        customUpdate = (time) => {
+          pillars.position.y = Math.sin(time * 0.8) * 0.05;
+          // Flickering torch lighting simulation
+          mainLight.intensity = 1.8 + Math.sin(time * 10) * 0.2 + Math.random() * 0.1;
+          colorLight.intensity = 2.5 + Math.cos(time * 8) * 0.3;
+        };
 
       } else if (round === 'riddles') {
-        // --- RIDDLES ROUND (Indigo Mysterious void with question marks) ---
-        mainLightColor = 0xa855f7; // Purple
-        colorLightColor = 0xec4899; // Pink
-        particleColorHex = 0xa855f7;
+        // --- RIDDLES Environment (Puzzle Pieces & Glowing Question Marks) ---
+        mainLightColor = 0xa855f7;
+        colorLightColor = 0xec4899;
+        pColor1 = 0xa855f7;
+        pColor2 = 0xec4899;
 
-        // Floating geometric question mark
-        const riddleGroup = new THREE.Group();
+        const riddlesGroup = new THREE.Group();
         
-        // Let's build a glowing dot and a hook
-        const hookGeo = new THREE.TorusGeometry(0.8, 0.2, 8, 24, Math.PI * 1.3);
-        const glowMat = new THREE.MeshPhongMaterial({ color: 0xa855f7, emissive: 0x220044, shininess: 80 });
-        const hook = new THREE.Mesh(hookGeo, glowMat);
-        hook.position.y = 0.5;
-        riddleGroup.add(hook);
+        // Large Question Mark shape
+        const qMark = new THREE.Group();
+        const hookGeo = new THREE.TorusGeometry(0.7, 0.16, 6, 20, Math.PI * 1.3);
+        const hook = new THREE.Mesh(hookGeo, crystalMat);
+        hook.position.y = 0.4;
+        qMark.add(hook);
 
-        const stemGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.4, 8);
-        const stem = new THREE.Mesh(stemGeo, glowMat);
-        stem.position.set(0.5, -0.3, 0);
+        const stemGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.35, 8);
+        const stem = new THREE.Mesh(stemGeo, crystalMat);
+        stem.position.set(0.48, -0.3, 0);
         stem.rotation.z = -Math.PI / 6;
-        riddleGroup.add(stem);
+        qMark.add(stem);
 
-        const dotGeo = new THREE.SphereGeometry(0.25, 12, 12);
-        const dot = new THREE.Mesh(dotGeo, glowMat);
-        dot.position.set(0.5, -1, 0);
-        riddleGroup.add(dot);
+        const dotGeo = new THREE.SphereGeometry(0.2, 10, 10);
+        const dot = new THREE.Mesh(dotGeo, crystalMat);
+        dot.position.set(0.48, -0.9, 0);
+        qMark.add(dot);
 
-        // Adjust anchor point so it spins nicely
-        riddleGroup.position.set(-0.2, 0, 0);
-        group.add(riddleGroup);
+        qMark.position.set(-0.24, 0, -1);
+        riddlesGroup.add(qMark);
+
+        // Drifting Puzzle pieces (floating rings/toruses)
+        const pieces = [];
+        if (!isMobile) {
+          const knotGeo = new THREE.TorusKnotGeometry(0.25, 0.07, 32, 6);
+          for (let i = 0; i < 4; i++) {
+            const piece = new THREE.Mesh(knotGeo, new THREE.MeshPhongMaterial({ color: 0xec4899, shininess: 40 }));
+            piece.position.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 5 - 2);
+            riddlesGroup.add(piece);
+            pieces.push(piece);
+          }
+        }
+
+        environmentGroup.add(riddlesGroup);
 
         customUpdate = (time) => {
-          riddleGroup.rotation.y = time * 0.6;
-          riddleGroup.rotation.x = Math.sin(time) * 0.15;
-          riddleGroup.position.y = Math.sin(time * 1.5) * 0.2;
+          qMark.rotation.y = time * 0.55;
+          qMark.rotation.x = Math.sin(time) * 0.1;
+          pieces.forEach((piece, i) => {
+            piece.rotation.x += 0.015;
+            piece.rotation.y += 0.01;
+            piece.position.y += Math.sin(time * 1.2 + i) * 0.002;
+          });
         };
-
-        // Sparkling mystery stars
-        for (let i = 0; i < particleCount; i++) {
-          particlePositions[i * 3] = (Math.random() - 0.5) * 16;
-          particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-          particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
-
-          const color = new THREE.Color(i % 2 === 0 ? 0xa855f7 : 0xec4899);
-          particleColors[i * 3] = color.r;
-          particleColors[i * 3 + 1] = color.g;
-          particleColors[i * 3 + 2] = color.b;
-        }
 
       } else if (round === 'tech') {
-        // --- TECH ROUND (Neon Digital Matrix Grid) ---
-        mainLightColor = 0x3b82f6; // Blue
-        colorLightColor = 0x10b981; // Emerald Green
-        particleColorHex = 0x10b981;
+        // --- TECH Environment (Holo-grid & Matrix Streams) ---
+        mainLightColor = 0x3b82f6;
+        colorLightColor = 0x10b981;
+        pColor1 = 0x3b82f6;
+        pColor2 = 0x10b981;
 
-        // Ground Neon Grid
-        gridHelper = new THREE.GridHelper(30, 20, 0x3b82f6, 0x10b981);
-        gridHelper.position.y = -3;
-        gridHelper.rotation.x = 0.1; // Slight angle
+        // Perspectival Grid helper (Emerald/Blue)
+        gridHelper = new THREE.GridHelper(30, 20, 0x10b981, 0x111827);
+        gridHelper.position.y = -3.2;
+        gridHelper.rotation.x = 0.08;
         scene.add(gridHelper);
 
-        // Floating digital circuit ring
-        const techGroup = new THREE.Group();
-        const techRingGeo = new THREE.TorusGeometry(2, 0.05, 8, 64);
-        const techRingMat = new THREE.MeshPhongMaterial({ color: 0x10b981, emissive: 0x003311 });
-        const ring1 = new THREE.Mesh(techRingGeo, techRingMat);
-        ring1.rotation.y = Math.PI / 2;
-        techGroup.add(ring1);
+        const techCore = new THREE.Group();
+        const hexGeo = new THREE.IcosahedronGeometry(1.6, 1);
+        const hex = new THREE.Mesh(hexGeo, holographicMat);
+        techCore.add(hex);
 
-        const ring2 = ring1.clone();
-        ring2.rotation.x = Math.PI / 2;
-        techGroup.add(ring2);
-
-        group.add(techGroup);
+        techCore.position.set(0, 0, -2);
+        environmentGroup.add(techCore);
 
         customUpdate = (time) => {
-          techGroup.rotation.y = time * 0.4;
-          techGroup.rotation.z = time * 0.2;
-          gridHelper.position.z = (time * 2) % 1.5 - 0.75; // Simulate forward movement
+          techCore.rotation.y = time * 0.3;
+          techCore.rotation.x = time * 0.1;
+          gridHelper.position.z = (time * 2.5) % 1.5 - 0.75; // Scrolling motion
         };
-
-        // Falling digital code raindrops
-        for (let i = 0; i < particleCount; i++) {
-          particlePositions[i * 3] = (Math.random() - 0.5) * 18;
-          particlePositions[i * 3 + 1] = (Math.random() * 12) - 6; // Start spread out
-          particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
-
-          const color = new THREE.Color(i % 3 === 0 ? 0x3b82f6 : 0x10b981);
-          particleColors[i * 3] = color.r;
-          particleColors[i * 3 + 1] = color.g;
-          particleColors[i * 3 + 2] = color.b;
-        }
       }
 
-      // Update lights
+      // 7. Transition background particles colors
+      const colors = particles.geometry.attributes.color.array;
+      for (let i = 0; i < particleCount; i++) {
+        const c = new THREE.Color(i % 2 === 0 ? pColor1 : pColor2);
+        colors[i * 3] = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+      particles.geometry.attributes.color.needsUpdate = true;
+
+      // Update light targets
       mainLight.color.setHex(mainLightColor);
       colorLight.color.setHex(colorLightColor);
-
-      // Create particle points
-      particleGeometry = new THREE.BufferGeometry();
-      particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-      particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-
-      // Custom square particle texture (programmatic canvas texture to avoid loading images)
-      const particleCanvas = document.createElement('canvas');
-      particleCanvas.width = 16;
-      particleCanvas.height = 16;
-      const ctx = particleCanvas.getContext('2d');
-      const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-      gradient.addColorStop(0, 'rgba(255,255,255,1)');
-      gradient.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 16, 16);
-      const texture = new THREE.CanvasTexture(particleCanvas);
-
-      particleMaterial = new THREE.PointsMaterial({
-        size: isMobile ? 0.08 : 0.12,
-        vertexColors: true,
-        map: texture,
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-
-      particles = new THREE.Points(particleGeometry, particleMaterial);
-      scene.add(particles);
     };
 
-    // Build initial scene
-    buildSceneElements(currentRound);
+    // Build initial
+    buildEnvironment(currentRound);
 
-    // 5. Animation Loop
-    let clock = new THREE.Clock();
-    let animationFrameId = null;
+    // Mouse movement listener
+    const onMouseMove = (e) => {
+      // Scale coordinates from -1 to 1
+      mouseRef.current.targetX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseRef.current.targetY = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', onMouseMove);
 
-    const animate = () => {
+    // 8. Animation loop
+    const clock = new THREE.Clock();
+    let animId = null;
+    let lastRound = currentRound;
+
+    const tick = () => {
+      const delta = clock.getDelta();
       const time = clock.getElapsedTime();
 
-      // Slow group rotation for background drift
-      group.rotation.y = Math.sin(time * 0.1) * 0.15;
-      group.rotation.x = Math.cos(time * 0.1) * 0.08;
+      // Detect round switches
+      if (roundRef.current !== lastRound) {
+        lastRound = roundRef.current;
+        // Start transition phase
+        transitionProgress = 0.0;
+        previousBgColor.setHex(getBgColor(lastRound === 'landing' ? 'landing' : lastRound));
+        targetBgColor.setHex(getBgColor(roundRef.current));
+      }
 
-      // Update active scene custom motions
+      // Smoothly update transition progress
+      if (transitionProgress < 1.0) {
+        transitionProgress += delta * 1.5; // ~0.66 seconds transition duration
+        if (transitionProgress >= 1.0) {
+          transitionProgress = 1.0;
+          buildEnvironment(lastRound); // Fully instantiate the new meshes
+        }
+
+        // 9. Camera Sweep Transition animation
+        // Pull camera way back (Z=14) and rotate, then slide back in (Z=8)
+        const t = transitionProgress;
+        // Cosine ease-in-out curve
+        const ease = 0.5 - Math.cos(t * Math.PI) * 0.5;
+
+        // Zoom camera back & in
+        if (ease < 0.5) {
+          // First half: zoom out and spin
+          targetCameraZ = 8 + (ease * 2) * 6; // Move back up to 14
+          transitionAngle = (ease * 2) * Math.PI; // Spin 180 degrees
+        } else {
+          // Second half: slide back in
+          targetCameraZ = 14 - ((ease - 0.5) * 2) * 6; // Slide back to 8
+          transitionAngle = Math.PI + ((ease - 0.5) * 2) * Math.PI; // Complete spin
+        }
+
+        // Interpolate ambient color and fog color
+        const lerpColor = previousBgColor.clone().lerp(targetBgColor, ease);
+        scene.background.copy(lerpColor);
+        scene.fog.color.copy(lerpColor);
+      } else {
+        // Calm steady camera state
+        targetCameraZ = 8;
+        transitionAngle = 0;
+      }
+
+      // 10. Interactive mouse-drift parallax (Lerping)
+      mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
+      mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
+
+      // Combine transition zoom, rotation, and mouse drift
+      camera.position.x = mouseRef.current.x * 1.2 + Math.sin(transitionAngle) * 2;
+      camera.position.y = mouseRef.current.y * 0.8;
+      camera.position.z = targetCameraZ + Math.cos(transitionAngle) * 1.5;
+      camera.lookAt(0, 0, 0);
+
+      // Background mesh drift rotation
+      environmentGroup.rotation.y = Math.sin(time * 0.05) * 0.1;
+      environmentGroup.rotation.x = Math.cos(time * 0.05) * 0.05;
+
+      // Update custom animations (film reels spin, columns flicker, hex spins, tech scrolls)
       customUpdate(time);
 
-      // Rotate particle systems based on round
+      // Animate particles
       if (particles) {
-        if (currentRound === 'tech') {
-          // Falling matrix-style digital rain
+        if (lastRound === 'tech') {
+          // Fall down (matrix code rain)
           const positions = particles.geometry.attributes.position.array;
           for (let i = 0; i < particleCount; i++) {
-            positions[i * 3 + 1] -= 0.05; // Fall speed
-            if (positions[i * 3 + 1] < -6) {
-              positions[i * 3 + 1] = 6; // Reset at top
+            positions[i * 3 + 1] -= 0.06;
+            if (positions[i * 3 + 1] < -5) {
+              positions[i * 3 + 1] = 5;
             }
           }
           particles.geometry.attributes.position.needsUpdate = true;
-        } else if (currentRound === 'history') {
-          // Rise like embers
+        } else if (lastRound === 'history') {
+          // Warm embers rise up
           const positions = particles.geometry.attributes.position.array;
           for (let i = 0; i < particleCount; i++) {
-            positions[i * 3 + 1] += 0.02; // Rise speed
-            positions[i * 3] += Math.sin(time + i) * 0.005; // Swirl
+            positions[i * 3 + 1] += 0.025;
+            positions[i * 3] += Math.sin(time * 0.5 + i) * 0.006;
             if (positions[i * 3 + 1] > 5) {
-              positions[i * 3 + 1] = -5; // Reset at bottom
+              positions[i * 3 + 1] = -5;
             }
           }
           particles.geometry.attributes.position.needsUpdate = true;
         } else {
-          // Default slow drift
-          particles.rotation.y = time * 0.03;
-          particles.rotation.x = Math.sin(time * 0.05) * 0.05;
+          // Slow floating dust
+          particles.rotation.y = time * 0.02;
+          particles.rotation.x = Math.sin(time * 0.04) * 0.04;
         }
       }
 
       renderer.render(scene, camera);
-      animationFrameId = requestAnimationFrame(animate);
+      animId = requestAnimationFrame(tick);
     };
 
-    animate();
+    tick();
 
-    // 6. Handle resize
+    // Handle resize
     const handleResize = () => {
       if (!renderer || !camera) return;
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
-
     window.addEventListener('resize', handleResize);
 
-    // 7. Cleanup
+    // Cleanup
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animId);
+      window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('resize', handleResize);
       
-      // Cleanup geometries & materials
-      while (group.children.length > 0) {
-        const obj = group.children[0];
-        group.remove(obj);
+      // Dispose meshes
+      while (environmentGroup.children.length > 0) {
+        const obj = environmentGroup.children[0];
+        environmentGroup.remove(obj);
         if (obj.geometry) obj.geometry.dispose();
         if (obj.material) {
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach(m => m.dispose());
-          } else {
-            obj.material.dispose();
-          }
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
         }
       }
 
       if (particles) {
         scene.remove(particles);
-        if (particleGeometry) particleGeometry.dispose();
-        if (particleMaterial) particleMaterial.dispose();
-      }
-
-      if (gridHelper) {
-        scene.remove(gridHelper);
+        particleGeometry.dispose();
+        particleMaterial.dispose();
       }
 
       renderer.dispose();
     };
-  }, [currentRound]); // Run when round changes to fade/transition elements
+  }, []); // Run ONCE at mount, internally listens to roundRef
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none -z-10 transition-colors duration-1000"
+      className="fixed inset-0 w-full h-full pointer-events-none -z-10 transition-colors duration-700"
       style={{ display: 'block' }}
     />
   );

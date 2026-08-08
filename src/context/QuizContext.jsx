@@ -20,6 +20,34 @@ export const roundConfig = {
 };
 
 export function QuizProvider({ children }) {
+  // Fisher-Yates shuffle that maintains correct answers
+  const shuffleQuestion = (q) => {
+    const correctText = q.options[q.correctAnswer];
+    const shuffledOptions = [...q.options];
+    for (let i = shuffledOptions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+    }
+    const newCorrectAnswer = shuffledOptions.indexOf(correctText);
+    return {
+      ...q,
+      options: shuffledOptions,
+      correctAnswer: newCorrectAnswer
+    };
+  };
+
+  const shuffleDatabase = (db) => {
+    return db.map(q => shuffleQuestion(q));
+  };
+
+  const [shuffledDbs, setShuffledDbs] = useState({
+    movies: shuffleDatabase(moviesQs),
+    gk: shuffleDatabase(gkQs),
+    history: shuffleDatabase(historyQs),
+    riddles: shuffleDatabase(riddlesQs),
+    tech: shuffleDatabase(techQs)
+  });
+
   const [activePage, setActivePage] = useState('landing'); // 'landing' | 'round-select' | 'quiz' | 'round-complete' | 'final-results'
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeRound, setActiveRound] = useState(null); // 'movies' | 'gk' | 'history' | 'riddles' | 'tech'
@@ -65,7 +93,7 @@ export function QuizProvider({ children }) {
     if (selectedOption !== null) return;
     
     setSelectedOption(optionIdx);
-    const questions = roundConfig[activeRound].db;
+    const questions = shuffledDbs[activeRound];
     const currentQ = questions[currentQuestionIndex];
     const isCorrect = optionIdx === currentQ.correctAnswer;
 
@@ -111,7 +139,7 @@ export function QuizProvider({ children }) {
 
   const nextQuestion = () => {
     triggerSound('click');
-    const questions = roundConfig[activeRound].db;
+    const questions = shuffledDbs[activeRound];
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedOption(null);
@@ -131,6 +159,11 @@ export function QuizProvider({ children }) {
 
   const playRoundAgain = () => {
     triggerSound('click');
+    // Reshuffle the current round's questions for the replay
+    setShuffledDbs(prev => ({
+      ...prev,
+      [activeRound]: shuffleDatabase(roundConfig[activeRound].db)
+    }));
     // Reset only the current round stats
     setRoundsState(prev => ({
       ...prev,
@@ -165,6 +198,14 @@ export function QuizProvider({ children }) {
 
   const restartQuiz = () => {
     triggerSound('transition');
+    // Reshuffle all databases for the new attempt
+    setShuffledDbs({
+      movies: shuffleDatabase(moviesQs),
+      gk: shuffleDatabase(gkQs),
+      history: shuffleDatabase(historyQs),
+      riddles: shuffleDatabase(riddlesQs),
+      tech: shuffleDatabase(techQs)
+    });
     // Reset all rounds
     setRoundsState({
       movies: { completed: false, score: 0, attempted: 0, answers: [] },
@@ -189,6 +230,7 @@ export function QuizProvider({ children }) {
       currentQuestionIndex,
       selectedOption,
       roundsState,
+      shuffledDbs,
       startQuiz,
       selectRound,
       selectOption,
@@ -203,6 +245,7 @@ export function QuizProvider({ children }) {
     </QuizContext.Provider>
   );
 }
+
 
 export function useQuiz() {
   return useContext(QuizContext);

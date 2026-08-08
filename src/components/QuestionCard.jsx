@@ -10,13 +10,15 @@ export default function QuestionCard() {
     currentQuestionIndex,
     selectedOption,
     selectOption,
-    nextQuestion
+    nextQuestion,
+    shuffledDbs
   } = useQuiz();
 
   const round = roundConfig[activeRound];
-  const questions = round.db;
+  const questions = shuffledDbs[activeRound];
   const question = questions[currentQuestionIndex];
   const isAnswered = selectedOption !== null;
+
 
   const letters = ['A', 'B', 'C', 'D'];
 
