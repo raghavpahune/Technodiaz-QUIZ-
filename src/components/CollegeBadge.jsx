@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function CollegeBadge({ className = '' }) {
   // Respects Vite's base path for dev server vs production repo path
-  const badgeUrl = `${import.meta.env.BASE_URL}badge.jpeg`;
+  const badgeUrl = `${import.meta.env.BASE_URL}badge.png`;
 
   return (
     <div className={`flex items-center gap-3 select-none ${className}`}>
