@@ -6,6 +6,64 @@ import ProgressBar from './ProgressBar';
 import TimerDisplay from './TimerDisplay';
 import BuzzerOverlay from './BuzzerOverlay';
 
+function TeamScoreEditor({ team, idx, isOnline, updateTeamScore, showToast }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempScore, setTempScore] = useState(team.score);
+
+  const handleSave = () => {
+    const val = parseInt(tempScore, 10);
+    if (!isNaN(val) && val !== team.score) {
+      updateTeamScore(idx, val);
+      showToast(`${team.name} score updated to ${val}`);
+    }
+    setIsEditing(false);
+  };
+
+  const adjustScore = (delta) => {
+    const newVal = team.score + delta;
+    updateTeamScore(idx, newVal);
+    showToast(`${team.name} score adjusted to ${newVal}`);
+  };
+
+  return (
+    <div className="flex justify-between items-center px-2 py-1.5 rounded-lg border border-white/5 text-xs font-sans group">
+      <div className="flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${isOnline ? 'bg-emerald-400 shadow-[0_0_4px_#10b981]' : 'bg-gray-600'}`} title={isOnline ? 'Phone connected' : 'Phone not connected'} />
+        <span className="text-gray-300 font-bold max-w-[90px] truncate">{team.name}</span>
+      </div>
+      
+      {isEditing ? (
+        <div className="flex items-center gap-1">
+          <input 
+            type="number" 
+            value={tempScore} 
+            onChange={e => setTempScore(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+            onBlur={handleSave}
+            autoFocus
+            className="w-12 px-1 py-0.5 bg-black/50 border border-yellow-500/50 rounded text-right text-emerald-400 font-display font-black outline-none"
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          {/* Quick nudge buttons (visible on hover) */}
+          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+            <button onClick={() => adjustScore(-1)} className="w-5 h-5 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-gray-400 active:scale-95 transition-colors">-</button>
+            <button onClick={() => adjustScore(1)} className="w-5 h-5 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-gray-400 active:scale-95 transition-colors">+</button>
+          </div>
+          <button 
+            onClick={() => { setIsEditing(true); setTempScore(team.score); }} 
+            className="font-display font-black text-emerald-400 hover:text-emerald-300 px-1 hover:bg-white/5 rounded cursor-pointer transition-colors min-w-[30px] text-right"
+            title="Click to edit score"
+          >
+            {team.score}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * QuizmasterPanel — the main control dashboard.
  * Shows in the primary browser window during quiz mode.
@@ -18,10 +76,16 @@ export default function QuizmasterPanel() {
     buzzerQueue, currentTeamIdx, incorrectTeams,
     startQuestion, markCorrect, markIncorrect, revealAnswer, nextQuestion,
     timerSeconds, timerDuration, setTimerDuration, openProjector, pointsPerCorrect,
-    connectedTeams, lanAddress
+    connectedTeams, lanAddress, updateTeamScore
   } = useQuiz();
 
   const [showQR, setShowQR] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   const round = roundConfig[activeRound];
   const questions = shuffledDbs[activeRound];
@@ -273,21 +337,31 @@ export default function QuizmasterPanel() {
           </div>
 
           {/* Scoreboard with connection status */}
-          <div className="glass-panel p-4 rounded-2xl flex flex-col gap-2">
-            <span className="font-display font-bold text-[10px] tracking-wider text-gray-500 uppercase">Scores</span>
-            {teams.map((team, idx) => {
-              const isOnline = !!connectedTeams[idx];
-              return (
-                <div key={idx} className="flex justify-between items-center px-2 py-1.5 rounded-lg border border-white/5 text-xs font-sans">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${isOnline ? 'bg-emerald-400 shadow-[0_0_4px_#10b981]' : 'bg-gray-600'}`}
-                      title={isOnline ? 'Phone connected' : 'Phone not connected'} />
-                    <span className="text-gray-300 font-bold">{team.name}</span>
-                  </div>
-                  <span className="font-display font-black text-emerald-400">{team.score}</span>
-                </div>
-              );
-            })}
+          <div className="glass-panel p-4 rounded-2xl flex flex-col gap-2 relative">
+            <span className="font-display font-bold text-[10px] tracking-wider text-gray-500 uppercase">Scores (Click to edit)</span>
+            
+            {/* Toast overlay */}
+            <AnimatePresence>
+              {toastMsg && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="absolute top-2 left-1/2 -translate-x-1/2 bg-yellow-500 text-slate-950 px-3 py-1 rounded-full text-[10px] font-bold font-sans tracking-wider whitespace-nowrap z-20 shadow-lg"
+                >
+                  {toastMsg}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {teams.map((team, idx) => (
+              <TeamScoreEditor 
+                key={idx} 
+                team={team} 
+                idx={idx} 
+                isOnline={!!connectedTeams[idx]} 
+                updateTeamScore={updateTeamScore}
+                showToast={showToast}
+              />
+            ))}
           </div>
         </div>
       </div>

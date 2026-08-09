@@ -65,6 +65,9 @@ export default function quizWsPlugin() {
             const parsed = JSON.parse(msg);
             if (parsed.type === 'quiz-state') {
               latestState = msg;
+              console.log(`[WS Relay] Received quiz-state from a client. Broadcasting to ${clients.size - 1} other clients.`);
+            } else if (parsed.type === 'register') {
+              console.log(`[WS Relay] Client registered: ${parsed.mode} (team ${parsed.teamIdx})`);
             }
           } catch {}
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { syncSend } from '../utils/sync';
+import { syncSend, syncListen } from '../utils/sync';
 
 /**
  * TeamBuzzerView — phone-only buzzer for one team.
@@ -15,6 +15,19 @@ export default function TeamBuzzerView() {
     teams, quizPhase, activePage,
     buzzerQueue, currentTeamIdx, incorrectTeams
   } = useQuiz();
+
+  const [isConnected, setIsConnected] = React.useState(false);
+
+  React.useEffect(() => {
+    // Add debug listener for all sync messages
+    const remove = syncListen((msg) => {
+      console.log('[TeamBuzzer] Received sync message:', msg.type, msg);
+      if (msg.type === 'quiz-state' || msg.type === 'server-info') {
+        setIsConnected(true);
+      }
+    });
+    return remove;
+  }, []);
 
   // ponytail: get team index from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -104,6 +117,9 @@ export default function TeamBuzzerView() {
 
       {/* Team name + score */}
       <div className="text-center z-10 mt-8">
+        <div className={`text-[10px] font-sans font-bold uppercase mb-2 ${isConnected ? 'text-emerald-400' : 'text-red-500'}`}>
+          {isConnected ? '● CONNECTED TO SERVER' : '○ DISCONNECTED'}
+        </div>
         <h1 className="font-display font-black text-3xl md:text-4xl text-white tracking-wider uppercase">
           {myTeam?.name || `Team ${myTeamIdx + 1}`}
         </h1>

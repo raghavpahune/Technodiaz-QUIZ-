@@ -235,6 +235,10 @@ export function QuizProvider({ children }) {
     setTeams(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const updateTeamScore = (idx, newScore) => {
+    setTeams(prev => prev.map((t, i) => i === idx ? { ...t, score: newScore } : t));
+  };
+
   const confirmTeamSetup = () => {
     setTeamSetupDone(true);
     triggerSound('click');
@@ -446,7 +450,7 @@ export function QuizProvider({ children }) {
       triggerSound,
 
       // Teams
-      teams, updateTeamName, addTeam, removeTeam, confirmTeamSetup, teamSetupDone,
+      teams, updateTeamName, addTeam, removeTeam, updateTeamScore, confirmTeamSetup, teamSetupDone,
 
       // Quiz phase state machine
       quizPhase, currentQuestion, isAnswerRevealed,
