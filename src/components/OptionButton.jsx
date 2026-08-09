@@ -1,4 +1,5 @@
 import React from 'react';
+import AnimatedButton from './AnimatedButton';
 
 /**
  * OptionButton — used by both quizmaster and projector.
@@ -23,7 +24,7 @@ export default function OptionButton({
   disabled = false,
   neutral = false
 }) {
-  let buttonStyle = 'border-white/8 bg-slate-950/40 text-gray-200 hover:bg-slate-900/50 hover:border-white/20 active:scale-[0.99]';
+  let buttonStyle = 'border-white/8 bg-slate-950/40 text-gray-200 hover:bg-slate-900/50 hover:border-white/20';
   let badgeStyle = 'bg-white/10 text-gray-300';
   let icon = null;
 
@@ -63,10 +64,10 @@ export default function OptionButton({
   }
 
   return (
-    <button
+    <AnimatedButton
       onClick={onClick}
       disabled={disabled}
-      className={`w-full flex items-center justify-between gap-4 p-4 rounded-xl border text-left font-sans text-sm md:text-base font-semibold transition-all duration-300 pointer-events-auto outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:border-transparent ${buttonStyle}`}
+      className={`w-full flex items-center justify-between gap-4 p-4 rounded-xl border text-left font-sans text-sm md:text-base font-semibold transition-colors duration-300 pointer-events-auto outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:border-transparent ${buttonStyle}`}
     >
       <div className="flex items-center gap-4">
         <span className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center font-display font-bold text-xs md:text-sm ${badgeStyle}`}>
@@ -75,6 +76,6 @@ export default function OptionButton({
         <span className="leading-tight">{text}</span>
       </div>
       {icon}
-    </button>
+    </AnimatedButton>
   );
 }

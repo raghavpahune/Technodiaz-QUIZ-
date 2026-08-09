@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { syncSend, syncListen } from '../utils/sync';
+import AnimatedButton from './AnimatedButton';
 
 /**
  * TeamBuzzerView — phone-only buzzer for one team.
@@ -63,7 +64,7 @@ export default function TeamBuzzerView() {
       statusColor = 'text-yellow-400 animate-pulse';
       buzzerActive = true;
       buzzerText = '🔔 BUZZ!';
-      buzzerClass = 'bg-yellow-500 text-slate-950 border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,0.6)] active:bg-yellow-300 active:scale-95';
+      buzzerClass = 'bg-yellow-500 text-slate-950 border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,0.6)]';
     } else if (hasBuzzed) {
       statusText = 'BUZZED — WAITING';
       statusColor = 'text-blue-400';
@@ -142,14 +143,13 @@ export default function TeamBuzzerView() {
 
       {/* Giant BUZZ button */}
       <div className="w-full z-10 mb-8">
-        <motion.button
-          whileTap={buzzerActive ? { scale: 0.9 } : {}}
+        <AnimatedButton
           onClick={handleBuzz}
           disabled={!buzzerActive}
-          className={`w-full aspect-[2/1] max-h-56 rounded-3xl font-display font-black text-5xl md:text-6xl tracking-widest border-4 transition-all duration-150 ${buzzerClass} ${!buzzerActive ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer'}`}
+          className={`w-full aspect-[2/1] max-h-56 rounded-3xl font-display font-black text-5xl md:text-6xl tracking-widest border-4 transition-colors duration-150 ${buzzerClass}`}
         >
           {buzzerText}
-        </motion.button>
+        </AnimatedButton>
       </div>
     </div>
   );

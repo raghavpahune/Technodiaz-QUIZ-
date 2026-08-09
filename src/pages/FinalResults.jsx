@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useQuiz, roundConfig } from '../context/QuizContext';
 import CollegeBadge from '../components/CollegeBadge';
 import SoundToggle from '../components/SoundToggle';
+import AnimatedButton from '../components/AnimatedButton';
 
 export default function FinalResults() {
   const { roundsState, teams, restartQuiz } = useQuiz();
@@ -118,15 +119,15 @@ export default function FinalResults() {
           </div>
 
           {/* Restart */}
-          <button
+          <AnimatedButton
             onClick={restartQuiz}
-            className="w-full py-4 mt-1 rounded-2xl font-display font-black text-base tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 active:scale-95 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] cursor-pointer pointer-events-auto flex items-center justify-center gap-2 group"
+            className="w-full py-4 mt-1 rounded-2xl font-display font-black text-base tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(234,179,8,0.3)] cursor-pointer pointer-events-auto flex items-center justify-center gap-2 group"
           >
             <svg className="w-5 h-5 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
             <span>RESTART COMPETITION</span>
-          </button>
+          </AnimatedButton>
         </motion.div>
       </main>
 

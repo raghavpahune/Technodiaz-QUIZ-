@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuiz, roundConfig } from '../context/QuizContext';
+import AnimatedButton from './AnimatedButton';
 
 export default function RoundTabs() {
   const { activeRound, selectRound, roundsState } = useQuiz();
@@ -32,10 +33,10 @@ export default function RoundTabs() {
             : 'border-white/5 bg-slate-950/40 text-gray-400 hover:text-gray-200 hover:border-white/15';
 
           return (
-            <button
+            <AnimatedButton
               key={key}
               onClick={() => selectRound(key)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 md:px-5 md:py-2.5 rounded-full border text-xs md:text-sm font-display font-bold tracking-wide transition-all duration-300 active:scale-95 pointer-events-auto ${themeClass}`}
+              className={`flex items-center gap-2 px-3.5 py-1.5 md:px-5 md:py-2.5 rounded-full border text-xs md:text-sm font-display font-bold tracking-wide transition-colors duration-300 pointer-events-auto ${themeClass}`}
             >
               <span className="text-base">{config.icon}</span>
               <span>{config.name}</span>
@@ -44,7 +45,7 @@ export default function RoundTabs() {
               }>
                 {statusText}
               </span>
-            </button>
+            </AnimatedButton>
           );
         })}
       </div>

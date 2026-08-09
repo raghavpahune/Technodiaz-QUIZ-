@@ -1,13 +1,14 @@
 import React from 'react';
 import { useQuiz } from '../context/QuizContext';
+import AnimatedButton from './AnimatedButton';
 
 export default function SoundToggle() {
   const { soundEnabled, toggleSound } = useQuiz();
 
   return (
-    <button
+    <AnimatedButton
       onClick={toggleSound}
-      className="p-2.5 rounded-full glass-panel hover:bg-white/10 active:scale-95 transition-all text-gray-300 hover:text-white pointer-events-auto flex items-center justify-center"
+      className="p-2.5 rounded-full glass-panel hover:bg-white/10 transition-colors text-gray-300 hover:text-white pointer-events-auto flex items-center justify-center"
       aria-label={soundEnabled ? "Disable sound" : "Enable sound"}
     >
       {soundEnabled ? (
@@ -43,6 +44,6 @@ export default function SoundToggle() {
           />
         </svg>
       )}
-    </button>
+    </AnimatedButton>
   );
 }

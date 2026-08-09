@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
+import AnimatedButton from './AnimatedButton';
 
 /**
  * Team setup screen — configure team names before starting a round.
@@ -44,12 +45,12 @@ export default function TeamSetup() {
                 maxLength={20}
               />
               {teams.length > 2 && (
-                <button
+                <AnimatedButton
                   onClick={() => removeTeam(idx)}
-                  className="w-7 h-7 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-950/30 flex items-center justify-center text-xs transition-all"
+                  className="w-7 h-7 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-950/30 flex items-center justify-center text-xs transition-colors"
                 >
                   ✕
-                </button>
+                </AnimatedButton>
               )}
             </div>
           ))}
@@ -57,19 +58,19 @@ export default function TeamSetup() {
 
         <div className="flex gap-3">
           {teams.length < 8 && (
-            <button
+            <AnimatedButton
               onClick={addTeam}
-              className="flex-1 py-2.5 rounded-xl border border-white/10 font-display font-bold text-xs tracking-wider text-gray-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
+              className="flex-1 py-2.5 rounded-xl border border-white/10 font-display font-bold text-xs tracking-wider text-gray-400 hover:text-white hover:border-white/20 transition-colors"
             >
               + ADD TEAM
-            </button>
+            </AnimatedButton>
           )}
-          <button
+          <AnimatedButton
             onClick={confirmTeamSetup}
-            className="flex-1 py-2.5 rounded-xl font-display font-black text-sm tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 active:scale-95 transition-all shadow-[0_0_15px_rgba(234,179,8,0.35)]"
+            className="flex-1 py-2.5 rounded-xl font-display font-black text-sm tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 transition-colors shadow-[0_0_15px_rgba(234,179,8,0.35)]"
           >
             START →
-          </button>
+          </AnimatedButton>
         </div>
       </motion.div>
     </motion.div>

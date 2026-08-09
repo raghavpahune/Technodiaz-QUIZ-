@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import CollegeBadge from '../components/CollegeBadge';
 import SoundToggle from '../components/SoundToggle';
+import AnimatedButton from '../components/AnimatedButton';
 
 export default function Landing() {
   const { startQuiz } = useQuiz();
@@ -54,17 +55,15 @@ export default function Landing() {
           </div>
 
           {/* Action Trigger Button */}
-          <motion.button
-            whileHover={{ scale: 1.025 }}
-            whileTap={{ scale: 0.975 }}
+          <AnimatedButton
             onClick={startQuiz}
-            className="w-full py-4 mt-1.5 rounded-2xl font-display font-black text-base md:text-lg tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] active:scale-95 cursor-pointer pointer-events-auto flex items-center justify-center gap-2 group"
+            className="w-full py-4 mt-1.5 rounded-2xl font-display font-black text-base md:text-lg tracking-wider bg-yellow-500 text-slate-950 shadow-[0_0_20px_rgba(234,179,8,0.3)] flex items-center justify-center gap-2 group"
           >
             <span>START QUIZ COMPETITION</span>
             <svg className="w-5 h-5 transition-transform group-hover:translate-x-1.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
-          </motion.button>
+          </AnimatedButton>
         </motion.div>
       </main>
 

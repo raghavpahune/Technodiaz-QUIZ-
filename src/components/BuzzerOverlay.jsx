@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useQuiz } from '../context/QuizContext';
+import AnimatedButton from './AnimatedButton';
 
 /**
  * Listens for keyboard buzzer inputs (keys 1-9 for teams)
@@ -29,22 +30,22 @@ export default function BuzzerOverlay() {
         const buzzOrder = buzzerQueue.indexOf(idx);
 
         return (
-          <button
+          <AnimatedButton
             key={idx}
             onClick={() => teamBuzz(idx)}
             disabled={!canBuzz || hasBuzzed}
-            className={`px-3 py-2 rounded-lg font-display font-bold text-xs tracking-wide transition-all duration-200 border ${
+            className={`px-3 py-2 rounded-lg font-display font-bold text-xs tracking-wide transition-colors duration-200 border ${
               hasBuzzed
-                ? 'border-yellow-500/40 bg-yellow-950/30 text-yellow-400 cursor-not-allowed'
+                ? 'border-yellow-500/40 bg-yellow-950/30 text-yellow-400'
                 : canBuzz
-                  ? 'border-white/10 bg-slate-900/50 text-gray-300 hover:bg-white/10 hover:border-white/20 active:scale-95'
-                  : 'border-white/5 bg-slate-950/30 text-gray-600 cursor-not-allowed'
+                  ? 'border-white/10 bg-slate-900/50 text-gray-300 hover:bg-white/10 hover:border-white/20'
+                  : 'border-white/5 bg-slate-950/30 text-gray-600'
             }`}
           >
             <span className="text-[10px] text-gray-500 block">Key {idx + 1}</span>
             {team.name}
             {hasBuzzed && <span className="ml-1 text-yellow-500 text-[10px]">#{buzzOrder + 1}</span>}
-          </button>
+          </AnimatedButton>
         );
       })}
     </div>

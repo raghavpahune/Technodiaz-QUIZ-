@@ -5,6 +5,7 @@ import OptionButton from './OptionButton';
 import ProgressBar from './ProgressBar';
 import TimerDisplay from './TimerDisplay';
 import BuzzerOverlay from './BuzzerOverlay';
+import AnimatedButton from './AnimatedButton';
 
 function TeamScoreEditor({ team, idx, isOnline, updateTeamScore, showToast }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -48,16 +49,16 @@ function TeamScoreEditor({ team, idx, isOnline, updateTeamScore, showToast }) {
         <div className="flex items-center gap-2">
           {/* Quick nudge buttons (visible on hover) */}
           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-            <button onClick={() => adjustScore(-1)} className="w-5 h-5 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-gray-400 active:scale-95 transition-colors">-</button>
-            <button onClick={() => adjustScore(1)} className="w-5 h-5 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-gray-400 active:scale-95 transition-colors">+</button>
+            <AnimatedButton onClick={() => adjustScore(-1)} className="w-5 h-5 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">-</AnimatedButton>
+            <AnimatedButton onClick={() => adjustScore(1)} className="w-5 h-5 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">+</AnimatedButton>
           </div>
-          <button 
+          <AnimatedButton 
             onClick={() => { setIsEditing(true); setTempScore(team.score); }} 
             className="font-display font-black text-emerald-400 hover:text-emerald-300 px-1 hover:bg-white/5 rounded cursor-pointer transition-colors min-w-[30px] text-right"
             title="Click to edit score"
           >
             {team.score}
-          </button>
+          </AnimatedButton>
         </div>
       )}
     </div>
@@ -114,22 +115,22 @@ export default function QuizmasterPanel() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <AnimatedButton
             onClick={() => setShowQR(v => !v)}
-            className="px-3 py-2 rounded-xl border border-white/10 font-display font-bold text-xs tracking-wider text-gray-300 hover:text-white hover:bg-white/5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl border border-white/10 font-display font-bold text-xs tracking-wider text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
             title="Show team QR codes"
           >
             📱 QR
-          </button>
-          <button
+          </AnimatedButton>
+          <AnimatedButton
             onClick={openProjector}
-            className="px-4 py-2 rounded-xl border border-white/10 font-display font-bold text-xs tracking-wider text-gray-300 hover:text-white hover:bg-white/5 transition-all active:scale-95 flex items-center gap-2"
+            className="px-4 py-2 rounded-xl border border-white/10 font-display font-bold text-xs tracking-wider text-gray-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
             </svg>
             PROJECTOR
-          </button>
+          </AnimatedButton>
         </div>
       </div>
 
@@ -147,7 +148,7 @@ export default function QuizmasterPanel() {
             <div className="glass-panel p-4 rounded-2xl">
               <div className="flex items-center justify-between mb-3">
                 <span className="font-display font-bold text-[10px] tracking-wider text-gray-500 uppercase">Team Buzzer QR Codes</span>
-                <button onClick={() => setShowQR(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
+                <AnimatedButton onClick={() => setShowQR(false)} className="text-gray-500 hover:text-white text-xs p-1">✕</AnimatedButton>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {teams.map((team, idx) => {
@@ -161,12 +162,12 @@ export default function QuizmasterPanel() {
                         <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_6px_#10b981]' : 'bg-gray-600'}`} />
                         <span className="text-xs font-sans font-bold text-gray-300 truncate max-w-20">{team.name}</span>
                       </div>
-                      <button
+                      <AnimatedButton
                         onClick={() => navigator.clipboard.writeText(url)}
-                        className="text-[10px] text-gray-500 hover:text-white px-2 py-1 bg-white/5 rounded active:bg-white/10 transition-colors font-display font-bold tracking-wider"
+                        className="text-[10px] text-gray-500 hover:text-white px-2 py-1 bg-white/5 rounded transition-colors font-display font-bold tracking-wider"
                       >
                         COPY LINK
-                      </button>
+                      </AnimatedButton>
                     </div>
                   );
                 })}
@@ -288,10 +289,10 @@ export default function QuizmasterPanel() {
           {/* Action buttons */}
           <div className="glass-panel p-4 rounded-2xl flex flex-col gap-2">
             {quizPhase === 'IDLE' && (
-              <button onClick={startQuestion}
-                className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 active:scale-95 transition-all shadow-[0_0_15px_rgba(234,179,8,0.35)]">
+              <AnimatedButton onClick={startQuestion}
+                className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 transition-colors shadow-[0_0_15px_rgba(234,179,8,0.35)]">
                 ▶ START QUESTION
-              </button>
+              </AnimatedButton>
             )}
 
             {quizPhase === 'TEAM_ANSWERING' && (
@@ -300,14 +301,14 @@ export default function QuizmasterPanel() {
                   <span className="font-display font-bold text-xs text-gray-400 tracking-wider">ANSWERING:</span>
                   <span className="block font-display font-black text-lg text-yellow-400 mt-1">{currentTeam?.name}</span>
                 </div>
-                <button onClick={markCorrect}
-                  className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.35)]">
+                <AnimatedButton onClick={markCorrect}
+                  className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-emerald-600 text-white hover:bg-emerald-500 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.35)]">
                   ✓ CORRECT (+{pointsPerCorrect} pts)
-                </button>
-                <button onClick={markIncorrect}
-                  className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-red-600 text-white hover:bg-red-500 active:scale-95 transition-all shadow-[0_0_15px_rgba(239,68,68,0.35)]">
+                </AnimatedButton>
+                <AnimatedButton onClick={markIncorrect}
+                  className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-red-600 text-white hover:bg-red-500 transition-colors shadow-[0_0_15px_rgba(239,68,68,0.35)]">
                   ✕ INCORRECT
-                </button>
+                </AnimatedButton>
               </>
             )}
 
@@ -319,20 +320,20 @@ export default function QuizmasterPanel() {
 
             {/* Manual reveal — available in TIME_UP and not yet revealed */}
             {quizPhase === 'TIME_UP' && !isAnswerRevealed && (
-              <button onClick={revealAnswer}
-                className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider border-2 border-purple-500/50 text-purple-300 hover:bg-purple-950/30 active:scale-95 transition-all">
+              <AnimatedButton onClick={revealAnswer}
+                className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider border-2 border-purple-500/50 text-purple-300 hover:bg-purple-950/30 transition-colors">
                 👁 REVEAL ANSWER
-              </button>
+              </AnimatedButton>
             )}
 
             {isAnswerRevealed && (
-              <button onClick={nextQuestion}
-                className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 active:scale-95 transition-all shadow-[0_0_15px_rgba(234,179,8,0.35)] flex items-center justify-center gap-2 group">
+              <AnimatedButton onClick={nextQuestion}
+                className="w-full py-3 rounded-xl font-display font-black text-sm tracking-wider bg-yellow-500 text-slate-950 hover:bg-yellow-400 transition-colors shadow-[0_0_15px_rgba(234,179,8,0.35)] flex items-center justify-center gap-2 group">
                 <span>NEXT QUESTION</span>
                 <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
-              </button>
+              </AnimatedButton>
             )}
           </div>
 
