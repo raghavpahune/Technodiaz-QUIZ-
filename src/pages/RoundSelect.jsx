@@ -5,11 +5,11 @@ import CollegeBadge from '../components/CollegeBadge';
 import SoundToggle from '../components/SoundToggle';
 
 export default function RoundSelect() {
-  const { selectRound, roundsState, finishQuiz } = useQuiz();
+  const { selectRound, roundsState, teams, finishQuiz } = useQuiz();
 
   const rounds = Object.entries(roundConfig);
   const completedCount = rounds.filter(([key]) => roundsState[key].completed).length;
-  const totalScore = rounds.reduce((sum, [key]) => sum + roundsState[key].score, 0);
+  const totalScore = teams.reduce((sum, t) => sum + t.score, 0);
   const totalAttempted = rounds.reduce((sum, [key]) => sum + roundsState[key].attempted, 0);
 
   const allRoundsCompleted = completedCount === rounds.length;
@@ -105,7 +105,7 @@ export default function RoundSelect() {
                   </span>
                   {isStarted && (
                     <span className="font-sans text-[10px] text-gray-500 mt-0.5 font-bold">
-                      Current: {state.score}/{state.attempted}
+                      Current: {state.attempted} answered
                     </span>
                   )}
                 </div>

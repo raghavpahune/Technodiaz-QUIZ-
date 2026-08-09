@@ -1,21 +1,37 @@
 import React from 'react';
 
+/**
+ * OptionButton — used by both quizmaster and projector.
+ * 
+ * Props:
+ *   letter, text        — display
+ *   isCorrect           — whether this is the correct option (from data)
+ *   revealCorrect       — whether we're allowed to SHOW correct/incorrect highlights
+ *   isSelected           — whether a team selected this (unused in projector mode)
+ *   showResult           — legacy compat: whether answer has been locked in
+ *   onClick, disabled    — interaction
+ *   neutral              — force neutral styling (projector before reveal)
+ */
 export default function OptionButton({
   letter,
   text,
-  isSelected,
-  isCorrect,
-  showResult,
+  isSelected = false,
+  isCorrect = false,
+  showResult = false,
+  revealCorrect = false,
   onClick,
-  disabled
+  disabled = false,
+  neutral = false
 }) {
   let buttonStyle = 'border-white/8 bg-slate-950/40 text-gray-200 hover:bg-slate-900/50 hover:border-white/20 active:scale-[0.99]';
   let badgeStyle = 'bg-white/10 text-gray-300';
   let icon = null;
 
-  if (showResult) {
+  // ponytail: only show highlights when explicitly told to reveal
+  const shouldReveal = showResult && revealCorrect && !neutral;
+
+  if (shouldReveal) {
     if (isCorrect) {
-      // Correct answer is highlighted green (whether selected or not)
       buttonStyle = 'border-emerald-500/50 bg-emerald-950/30 text-emerald-100 ring-2 ring-emerald-500/30 neon-glow-teal';
       badgeStyle = 'bg-emerald-500 text-white';
       icon = (
@@ -27,7 +43,6 @@ export default function OptionButton({
         </div>
       );
     } else if (isSelected) {
-      // Selected wrong answer is highlighted red
       buttonStyle = 'border-red-500/50 bg-red-950/30 text-red-100 ring-2 ring-red-500/30 neon-glow-red';
       badgeStyle = 'bg-red-500 text-white';
       icon = (
@@ -39,10 +54,12 @@ export default function OptionButton({
         </div>
       );
     } else {
-      // Unselected wrong answers are dimmed
       buttonStyle = 'border-white/5 bg-slate-950/10 text-gray-500 opacity-40 cursor-not-allowed';
       badgeStyle = 'bg-white/5 text-gray-600';
     }
+  } else if (disabled && !neutral) {
+    // Answered but not revealed yet — keep neutral but non-interactive
+    buttonStyle = 'border-white/8 bg-slate-950/40 text-gray-300 cursor-not-allowed';
   }
 
   return (

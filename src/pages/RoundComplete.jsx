@@ -5,17 +5,13 @@ import CollegeBadge from '../components/CollegeBadge';
 import SoundToggle from '../components/SoundToggle';
 
 export default function RoundComplete() {
-  const { activeRound, roundsState, playRoundAgain, goToRoundSelect } = useQuiz();
+  const { activeRound, roundsState, teams, playRoundAgain, goToRoundSelect, pointsPerCorrect } = useQuiz();
 
   const round = roundConfig[activeRound];
   const state = roundsState[activeRound];
-
-  const score = state.score;
   const attempted = state.attempted;
-  const wrong = attempted - score;
-  const accuracy = attempted > 0 ? Math.round((score / attempted) * 100) : 0;
 
-  // Match the active round's ambient palette
+  // Neon glow per round
   const neonGlow = 
     activeRound === 'movies' ? 'neon-glow-red border-red-500/30' :
     activeRound === 'gk' ? 'neon-glow-teal border-teal-500/30' :
@@ -30,15 +26,20 @@ export default function RoundComplete() {
     activeRound === 'riddles' ? 'text-purple-400' :
     'text-blue-400';
 
+  // Sort teams by score for this round
+  const teamRoundScores = teams.map((t, i) => ({
+    ...t,
+    idx: i,
+    roundScore: state.teamScores?.[i] || 0
+  })).sort((a, b) => b.roundScore - a.roundScore);
+
   return (
     <div className="min-h-screen flex flex-col justify-between items-center px-4 py-6 md:py-8 relative">
-      {/* Header Row */}
       <header className="w-full max-w-5xl flex justify-between items-center z-10 pointer-events-none">
         <CollegeBadge />
         <SoundToggle />
       </header>
 
-      {/* Main Results Card */}
       <main className="w-full max-w-md z-10 my-auto flex flex-col items-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
@@ -56,28 +57,37 @@ export default function RoundComplete() {
             </p>
           </div>
 
-          {/* Interactive Score Circle */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="relative w-36 h-36 flex flex-col items-center justify-center rounded-full border border-white/10 bg-slate-950/50">
-              <span className="text-4xl md:text-5xl font-display font-black text-white">{score}</span>
-              <span className="text-[9px] text-gray-500 font-display font-bold uppercase tracking-widest mt-1">out of {attempted}</span>
-            </div>
+          {/* Questions answered */}
+          <div className="text-center">
+            <span className="text-[9px] text-gray-500 font-display font-bold uppercase tracking-widest">Questions Answered</span>
+            <span className="block text-2xl font-display font-black text-white mt-1">{attempted}</span>
           </div>
 
-          {/* Stats breakdown */}
-          <div className="grid grid-cols-3 gap-3 text-center bg-slate-950/45 p-4 rounded-2xl border border-white/5 font-display select-none">
-            <div className="flex flex-col items-center">
-              <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Accuracy</span>
-              <span className="text-base md:text-lg font-black text-yellow-500 mt-1">{accuracy}%</span>
-            </div>
-            <div className="flex flex-col items-center border-x border-white/10">
-              <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Correct</span>
-              <span className="text-base md:text-lg font-black text-emerald-400 mt-1">{score}</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Wrong</span>
-              <span className="text-base md:text-lg font-black text-red-400 mt-1">{wrong}</span>
-            </div>
+          {/* Team standings for this round */}
+          <div className="flex flex-col gap-2 text-left">
+            <h3 className="font-display font-black text-xs tracking-wider uppercase text-gray-400 pl-1">
+              Round Standings
+            </h3>
+            {teamRoundScores.map((team, rank) => (
+              <div
+                key={team.idx}
+                className={`flex justify-between items-center p-3 rounded-xl border font-sans ${
+                  rank === 0 && team.roundScore > 0
+                    ? 'border-yellow-500/25 bg-yellow-950/10'
+                    : 'border-white/5 bg-slate-900/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {rank === 0 && team.roundScore > 0 && <span>🏆</span>}
+                  <span className="text-sm font-bold text-gray-200">{team.name}</span>
+                </div>
+                <span className={`font-display font-black text-sm ${
+                  rank === 0 && team.roundScore > 0 ? 'text-yellow-400' : 'text-emerald-400'
+                }`}>
+                  {team.roundScore} pts
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* Options Row */}

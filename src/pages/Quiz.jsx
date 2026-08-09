@@ -3,13 +3,17 @@ import { useQuiz } from '../context/QuizContext';
 import CollegeBadge from '../components/CollegeBadge';
 import SoundToggle from '../components/SoundToggle';
 import RoundTabs from '../components/RoundTabs';
-import QuestionCard from '../components/QuestionCard';
+import QuizmasterPanel from '../components/QuizmasterPanel';
+import TeamSetup from '../components/TeamSetup';
 
 export default function Quiz() {
-  const { goToRoundSelect } = useQuiz();
+  const { goToRoundSelect, teamSetupDone } = useQuiz();
 
   return (
     <div className="min-h-screen flex flex-col justify-between items-center px-4 py-4 md:py-6 relative">
+      {/* Team setup overlay */}
+      {!teamSetupDone && <TeamSetup />}
+
       {/* Header Container */}
       <header className="w-full max-w-5xl flex flex-col gap-4 z-10">
         <div className="w-full flex justify-between items-center pointer-events-none">
@@ -34,14 +38,14 @@ export default function Quiz() {
         <RoundTabs />
       </header>
 
-      {/* Focused Question Display */}
-      <main className="w-full max-w-3xl z-10 my-auto flex flex-col justify-center">
-        <QuestionCard />
+      {/* Quizmaster Panel (replaces QuestionCard in main window) */}
+      <main className="w-full max-w-5xl z-10 my-auto flex flex-col justify-center">
+        <QuizmasterPanel />
       </main>
 
       {/* Footer Guide */}
       <footer className="text-center text-[10px] text-gray-500 tracking-widest uppercase select-none z-10 mt-4">
-        Lock in your answer to unlock the explanation and advance.
+        Quizmaster controls • Press number keys for team buzzers
       </footer>
     </div>
   );

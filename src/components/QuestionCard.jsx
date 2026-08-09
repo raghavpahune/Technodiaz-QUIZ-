@@ -4,22 +4,31 @@ import { useQuiz, roundConfig } from '../context/QuizContext';
 import OptionButton from './OptionButton';
 import ProgressBar from './ProgressBar';
 
+/**
+ * QuestionCard — display-only question card.
+ * Used by the projector view and legacy single-player mode.
+ * Does NOT handle answer selection directly — that's done via quizmaster.
+ * 
+ * ponytail: kept for backward compat, but quiz page now uses QuizmasterPanel instead.
+ */
 export default function QuestionCard() {
+  const ctx = useQuiz();
   const {
     activeRound,
     currentQuestionIndex,
-    selectedOption,
-    selectOption,
     nextQuestion,
-    shuffledDbs
-  } = useQuiz();
+    shuffledDbs,
+    isAnswerRevealed
+  } = ctx;
+
+  // ponytail: selectOption/selectedOption removed from live quiz flow, safe fallbacks
+  const selectedOption = ctx.selectedOption ?? null;
+  const selectOption = ctx.selectOption ?? (() => {});
 
   const round = roundConfig[activeRound];
   const questions = shuffledDbs[activeRound];
   const question = questions[currentQuestionIndex];
   const isAnswered = selectedOption !== null;
-
-
   const letters = ['A', 'B', 'C', 'D'];
 
   return (
@@ -87,17 +96,19 @@ export default function QuestionCard() {
                 isSelected={selectedOption === idx}
                 isCorrect={idx === question.correctAnswer}
                 showResult={isAnswered}
+                revealCorrect={isAnswerRevealed}
                 onClick={() => selectOption(idx)}
                 disabled={isAnswered}
+                neutral={!isAnswerRevealed}
               />
             ))}
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Answer Verification & Explanation Card */}
+      {/* Answer Verification & Explanation Card — only when answer is revealed */}
       <AnimatePresence>
-        {isAnswered && (
+        {isAnswerRevealed && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,13 +117,11 @@ export default function QuestionCard() {
             className="glass-panel p-5 md:p-6 rounded-2xl border border-white/10 flex flex-col gap-4 text-left relative overflow-hidden"
           >
             {/* Result Accent Bar */}
-            <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${
-              selectedOption === question.correctAnswer ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'
-            }`} />
+            <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-emerald-500 shadow-[0_0_10px_#10b981]" />
 
             <div className="pl-3">
               <h3 className="font-display font-black text-xs md:text-sm tracking-wider uppercase text-yellow-500">
-                {selectedOption === question.correctAnswer ? '✨ Correct Answer' : '💡 Explanation'}
+                ✨ Correct Answer
               </h3>
               <p className="text-sm md:text-base text-gray-300 leading-relaxed mt-2 font-medium">
                 {question.explanation}
