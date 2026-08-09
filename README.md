@@ -34,7 +34,7 @@ Interactive quiz competition platform for live, in-person team events. Built wit
 ```
 
 **Frontend**: GitHub Pages (static React SPA)  
-**Backend**: Node.js WebSocket relay on Render.com (free tier)
+**Backend**: Node.js WebSocket relay on Koyeb (free tier)
 
 ## Quick Start (Local Development)
 
@@ -61,22 +61,25 @@ In dev mode, the Vite plugin (`vite-ws-plugin.js`) runs the WebSocket relay — 
 
 ### Step 1: Deploy the WebSocket Relay Server
 
-The relay server (`server.js`) needs to be hosted somewhere with WebSocket support. We use Render.com (free tier):
+The relay server (`server.js`) needs to be hosted somewhere with WebSocket support. We recommend **Koyeb** (free tier):
 
 1. Push this repo to GitHub
-2. Go to [render.com](https://render.com) → New → **Web Service**
-3. Connect your GitHub repo
-4. Render auto-detects `render.yaml` — just click **Create Web Service**
-5. Wait for deploy — note your URL (e.g. `https://technodiaz-quiz-relay.onrender.com`)
+2. Go to [Koyeb](https://app.koyeb.com/) and sign in.
+3. Click **Create Web Service**.
+4. Select **GitHub** and connect this repository.
+5. In the builder settings, choose **Buildpack** or Node.js. Koyeb will automatically detect `server.js` and the `start` script in `package.json`.
+6. Select the **Eco** / **Free Nano** tier.
+7. Click **Deploy**.
+8. Wait for deploy — note your URL (e.g. `https://your-app-name.koyeb.app`)
 
-Verify: `curl https://technodiaz-quiz-relay.onrender.com/` should return `{"status":"ok",...}`
+Verify: `curl https://your-app-name.koyeb.app/` should return `{"status":"ok",...}`
 
 ### Step 2: Configure Frontend
 
-Set your Render URL in `.env.production`:
+Set your Koyeb URL in `.env.production` (remember to change `https://` to `wss://`):
 
 ```env
-VITE_WS_URL=wss://technodiaz-quiz-relay.onrender.com
+VITE_WS_URL=wss://your-app-name.koyeb.app
 ```
 
 ### Step 3: Deploy Frontend to GitHub Pages
@@ -119,6 +122,7 @@ Quiz state is persisted on the WebSocket relay server. If the host laptop crashe
 
 ## Notes
 
-- **Render free tier cold starts**: The server sleeps after 15 min of inactivity. First connection after sleep takes ~30s. Hit the health check URL a minute before your event starts.
+- **Koyeb Free Tier Scaling**: Koyeb's free tier scales to zero after 1 hour of no traffic AND no active WebSocket connections. However, it will stay awake as long as a WebSocket connection is open (which means it will remain live throughout the quiz once teams connect).
+- **Cold Starts**: If it does sleep, the cold start time is very short (~1-5 seconds). Open the Koyeb URL a minute before your event starts just to be safe.
 - **Buzzer ordering**: The server stamps buzz events with `Date.now()` for authoritative ordering, so near-simultaneous buzzes are correctly sequenced.
 - **BroadcastChannel fallback**: For same-device windows (e.g. quizmaster + projector on one laptop), BroadcastChannel syncs instantly without needing the server.

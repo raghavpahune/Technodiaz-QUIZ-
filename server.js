@@ -137,7 +137,7 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] Quiz WebSocket relay running on port ${PORT}`);
   console.log(`[server] Health check: http://localhost:${PORT}/`);
   console.log(`[server] WebSocket:    ws://localhost:${PORT}/quiz-ws`);
