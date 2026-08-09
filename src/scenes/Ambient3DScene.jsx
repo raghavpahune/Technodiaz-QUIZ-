@@ -232,27 +232,49 @@ export default function Ambient3DScene({ currentRound }) {
 
         const reelGroup = new THREE.Group();
         const reelGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.35, 24);
-        const reel = new THREE.Mesh(reelGeo, silverMat);
-        reel.rotation.x = Math.PI / 2;
-        reelGroup.add(reel);
+        
+        const createReel = (scale = 1) => {
+          const group = new THREE.Group();
+          const reel = new THREE.Mesh(reelGeo, silverMat);
+          reel.rotation.x = Math.PI / 2;
+          group.add(reel);
 
-        // Inside dark film core
-        const coreGeo = new THREE.CylinderGeometry(1.65, 1.65, 0.3, 16);
-        const coreMat = new THREE.MeshPhongMaterial({ color: 0x111827, shininess: 15 });
-        const core = new THREE.Mesh(coreGeo, coreMat);
-        core.rotation.x = Math.PI / 2;
-        reelGroup.add(core);
+          const coreGeo = new THREE.CylinderGeometry(1.65, 1.65, 0.3, 16);
+          const coreMat = new THREE.MeshPhongMaterial({ color: 0x111827, shininess: 15 });
+          const core = new THREE.Mesh(coreGeo, coreMat);
+          core.rotation.x = Math.PI / 2;
+          group.add(core);
 
-        // Decorative film holes
-        for (let i = 0; i < 6; i++) {
-          const angle = (i / 6) * Math.PI * 2;
-          const holeGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 12);
-          const hole = new THREE.Mesh(holeGeo, new THREE.MeshBasicMaterial({ color: getBgColor('movies') }));
-          hole.position.set(Math.cos(angle) * 1.0, 0, Math.sin(angle) * 1.0);
-          reelGroup.add(hole);
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            const holeGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 12);
+            const hole = new THREE.Mesh(holeGeo, new THREE.MeshBasicMaterial({ color: getBgColor('movies') }));
+            hole.position.set(Math.cos(angle) * 1.0, 0, Math.sin(angle) * 1.0);
+            group.add(hole);
+          }
+          group.scale.set(scale, scale, scale);
+          return group;
+        };
+
+        const mainReel = createReel(1);
+        mainReel.position.set(0, 0, -2);
+        reelGroup.add(mainReel);
+
+        const floatingReels = [];
+        if (!isMobile) {
+          for (let i = 0; i < 5; i++) {
+            const r = createReel(0.4 + Math.random() * 0.3);
+            r.position.set(
+              (i % 2 === 0 ? -1 : 1) * (4 + Math.random() * 2),
+              (Math.random() - 0.5) * 6,
+              -3 - Math.random() * 3
+            );
+            r.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            reelGroup.add(r);
+            floatingReels.push(r);
+          }
         }
 
-        reelGroup.position.set(0, 0, -2);
         environmentGroup.add(reelGroup);
 
         // Spotlights
@@ -279,8 +301,13 @@ export default function Ambient3DScene({ currentRound }) {
         }
 
         customUpdate = (time) => {
-          reelGroup.rotation.z = time * 0.3;
-          reelGroup.rotation.y = Math.sin(time * 0.5) * 0.1;
+          mainReel.rotation.z = time * 0.3;
+          mainReel.rotation.y = Math.sin(time * 0.5) * 0.1;
+          floatingReels.forEach((r, i) => {
+            r.rotation.x += 0.01;
+            r.rotation.y += 0.015;
+            r.position.y += Math.sin(time * 0.8 + i) * 0.005;
+          });
           spots.forEach((spot, i) => {
             spot.rotation.x = Math.sin(time + i) * 0.1;
             spot.rotation.y = Math.cos(time + i) * 0.15;
@@ -312,6 +339,22 @@ export default function Ambient3DScene({ currentRound }) {
         loop2.rotation.x = -Math.PI / 4;
         globe.add(loop2);
 
+        // Floating satellites/stars
+        const satellites = [];
+        if (!isMobile) {
+          const starGeo = new THREE.OctahedronGeometry(0.15, 0);
+          for (let i = 0; i < 8; i++) {
+             const star = new THREE.Mesh(starGeo, holographicMat);
+             star.position.set(
+               (i % 2 === 0 ? -1 : 1) * (3.5 + Math.random() * 2),
+               (Math.random() - 0.5) * 8,
+               -1 - Math.random() * 3
+             );
+             globe.add(star);
+             satellites.push(star);
+          }
+        }
+
         environmentGroup.add(globe);
 
         customUpdate = (time) => {
@@ -319,6 +362,11 @@ export default function Ambient3DScene({ currentRound }) {
           globe.rotation.x = time * 0.04;
           loop1.rotation.z = time * 0.1;
           loop2.rotation.z = -time * 0.15;
+          satellites.forEach((s, i) => {
+            s.rotation.y += 0.02;
+            s.rotation.x += 0.01;
+            s.position.y += Math.sin(time + i) * 0.003;
+          });
         };
 
       } else if (round === 'history') {
@@ -346,8 +394,8 @@ export default function Ambient3DScene({ currentRound }) {
           pillars.add(pil);
         };
 
-        spawnPillar(-3.5, -2);
-        spawnPillar(3.5, -2);
+        spawnPillar(-5, -2);
+        spawnPillar(5, -2);
         if (!isMobile) {
           spawnPillar(0, -5);
         }
@@ -434,12 +482,33 @@ export default function Ambient3DScene({ currentRound }) {
         techCore.add(hex);
 
         techCore.position.set(0, 0, -2);
+        
+        const shards = [];
+        if (!isMobile) {
+          const shardGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+          for (let i = 0; i < 8; i++) {
+            const shard = new THREE.Mesh(shardGeo, holographicMat);
+            shard.position.set(
+              (i % 2 === 0 ? -1 : 1) * (3.5 + Math.random() * 3),
+              (Math.random() - 0.5) * 8,
+              -1 - Math.random() * 4
+            );
+            techCore.add(shard);
+            shards.push(shard);
+          }
+        }
+        
         environmentGroup.add(techCore);
 
         customUpdate = (time) => {
           techCore.rotation.y = time * 0.3;
           techCore.rotation.x = time * 0.1;
           gridHelper.position.z = (time * 2.5) % 1.5 - 0.75; // Scrolling motion
+          shards.forEach((shard, i) => {
+            shard.rotation.x += 0.01;
+            shard.rotation.y += 0.02;
+            shard.position.y += Math.sin(time + i) * 0.005;
+          });
         };
       }
 
@@ -480,10 +549,11 @@ export default function Ambient3DScene({ currentRound }) {
 
       // Detect round switches
       if (roundRef.current !== lastRound) {
+        // Fix: Use lastRound to set previousBgColor before updating it
+        previousBgColor.setHex(getBgColor(lastRound === 'landing' ? 'landing' : lastRound));
         lastRound = roundRef.current;
         // Start transition phase
         transitionProgress = 0.0;
-        previousBgColor.setHex(getBgColor(lastRound === 'landing' ? 'landing' : lastRound));
         targetBgColor.setHex(getBgColor(roundRef.current));
       }
 

@@ -16,7 +16,7 @@ export default function ProjectorView() {
     teams, quizPhase, currentQuestion, isAnswerRevealed,
     buzzerQueue, currentBuzzerIdx, currentTeamIdx, incorrectTeams,
     timerSeconds, timerDuration, activePage,
-    connectedTeams
+    connectedTeams, lockedOptionIdx, toggleLockedOption
   } = useQuiz();
 
   const letters = ['A', 'B', 'C', 'D'];
@@ -47,7 +47,7 @@ export default function ProjectorView() {
   const revealedExplanation = isAnswerRevealed ? question.explanation : null;
 
   return (
-    <div className="min-h-screen bg-[#030008] flex flex-col p-6 md:p-10 gap-6 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col p-6 md:p-10 gap-6 relative overflow-hidden">
       {/* Ambient glow */}
       <div className={`absolute -top-20 -right-20 w-80 h-80 blur-3xl opacity-10 rounded-full ${
         round.palette === 'red' ? 'bg-red-500' :
@@ -102,8 +102,9 @@ export default function ProjectorView() {
                     isCorrect={idx === revealedCorrectIdx}
                     revealCorrect={isAnswerRevealed}
                     showResult={isAnswerRevealed}
-                    disabled={true}
-                    neutral={!isAnswerRevealed}
+                    isSelected={lockedOptionIdx === idx}
+                    onClick={() => toggleLockedOption(idx)}
+                    disabled={false}
                   />
                 ))}
               </div>

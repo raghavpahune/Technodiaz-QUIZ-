@@ -1,81 +1,79 @@
 import React from 'react';
-import AnimatedButton from './AnimatedButton';
+import { motion } from 'framer-motion';
 
-/**
- * OptionButton — used by both quizmaster and projector.
- * 
- * Props:
- *   letter, text        — display
- *   isCorrect           — whether this is the correct option (from data)
- *   revealCorrect       — whether we're allowed to SHOW correct/incorrect highlights
- *   isSelected           — whether a team selected this (unused in projector mode)
- *   showResult           — legacy compat: whether answer has been locked in
- *   onClick, disabled    — interaction
- *   neutral              — force neutral styling (projector before reveal)
- */
 export default function OptionButton({
   letter,
   text,
   isSelected = false,
   isCorrect = false,
-  showResult = false,
-  revealCorrect = false,
+  revealState = 'WAITING_FOR_SELECTION', // 'WAITING_FOR_SELECTION' | 'SELECTED' | 'REVEALED'
   onClick,
-  disabled = false,
-  neutral = false
+  disabled = false
 }) {
-  let buttonStyle = 'border-white/8 bg-slate-950/40 text-gray-200 hover:bg-slate-900/50 hover:border-white/20';
-  let badgeStyle = 'bg-white/10 text-gray-300';
-  let icon = null;
+  
+  let containerClasses = "relative w-full flex items-center gap-4 p-4 rounded bg-cyan-950/20 border border-cyan-900/50 text-left font-sans text-lg md:text-xl transition-all duration-300";
+  let badgeClasses = "w-10 h-10 shrink-0 rounded flex items-center justify-center font-bold text-lg border transition-colors";
+  let textClasses = "text-white font-medium";
+  let statusIcon = null;
 
-  // ponytail: only show highlights when explicitly told to reveal
-  const shouldReveal = showResult && revealCorrect && !neutral;
+  const isRevealed = revealState === 'REVEALED';
 
-  if (shouldReveal) {
+  if (isRevealed) {
     if (isCorrect) {
-      buttonStyle = 'border-emerald-500/50 bg-emerald-950/30 text-emerald-100 ring-2 ring-emerald-500/30 neon-glow-teal';
-      badgeStyle = 'bg-emerald-500 text-white';
-      icon = (
-        <div className="flex items-center gap-1.5 text-emerald-400 font-display font-bold text-xs">
-          <span>Correct</span>
-          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
+      containerClasses = "relative w-full flex items-center gap-4 p-4 rounded bg-green-950/40 border-2 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] text-left font-sans text-lg md:text-xl transition-all duration-300 transform scale-[1.02]";
+      badgeClasses = "w-10 h-10 shrink-0 rounded flex items-center justify-center font-bold text-lg border-green-500 bg-green-500 text-black";
+      textClasses = "text-green-50 font-bold";
+      statusIcon = (
+        <span className="ml-auto text-green-400 font-bold tracking-widest text-sm flex items-center gap-2 animate-pulse">
+          ✓ CORRECT ANSWER
+        </span>
       );
     } else if (isSelected) {
-      buttonStyle = 'border-red-500/50 bg-red-950/30 text-red-100 ring-2 ring-red-500/30 neon-glow-red';
-      badgeStyle = 'bg-red-500 text-white';
-      icon = (
-        <div className="flex items-center gap-1.5 text-red-400 font-display font-bold text-xs">
-          <span>Incorrect</span>
-          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
+      containerClasses = "relative w-full flex items-center gap-4 p-4 rounded bg-red-950/40 border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)] text-left font-sans text-lg md:text-xl transition-all duration-300";
+      badgeClasses = "w-10 h-10 shrink-0 rounded flex items-center justify-center font-bold text-lg border-red-500 bg-red-500 text-white";
+      textClasses = "text-red-100 font-bold";
+      statusIcon = (
+        <span className="ml-auto text-red-500 font-bold tracking-widest text-sm flex items-center gap-2">
+          ✕ INCORRECT
+        </span>
       );
     } else {
-      buttonStyle = 'border-white/5 bg-slate-950/10 text-gray-500 opacity-40 cursor-not-allowed';
-      badgeStyle = 'bg-white/5 text-gray-600';
+      // Dimmed wrong options
+      containerClasses = "relative w-full flex items-center gap-4 p-4 rounded bg-black/40 border border-gray-800 text-left font-sans text-lg md:text-xl opacity-40 transition-all duration-300";
+      badgeClasses = "w-10 h-10 shrink-0 rounded flex items-center justify-center font-bold text-lg border-gray-700 text-gray-500";
+      textClasses = "text-gray-500";
     }
-  } else if (disabled && !neutral) {
-    // Answered but not revealed yet — keep neutral but non-interactive
-    buttonStyle = 'border-white/8 bg-slate-950/40 text-gray-300 cursor-not-allowed';
+  } else if (isSelected) {
+    // Selected but not revealed
+    containerClasses = "relative w-full flex items-center gap-4 p-4 rounded bg-cyan-900/40 border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.3)] text-left font-sans text-lg md:text-xl transition-all duration-300";
+    badgeClasses = "w-10 h-10 shrink-0 rounded flex items-center justify-center font-bold text-lg border-cyan-400 bg-cyan-500 text-black";
+    textClasses = "text-cyan-50 font-bold";
+    statusIcon = (
+      <span className="ml-auto text-cyan-400 font-bold tracking-widest text-sm uppercase">
+        SELECTED
+      </span>
+    );
+  } else {
+    // Default Hover
+    if (!disabled) {
+       containerClasses += " hover:bg-cyan-900/30 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,255,255,0.2)] hover:scale-[1.01]";
+       badgeClasses += " border-cyan-900/50 text-cyan-500";
+    } else {
+       badgeClasses += " border-cyan-900/50 text-cyan-500/50";
+       textClasses = "text-white/50 font-medium";
+    }
   }
 
   return (
-    <AnimatedButton
+    <motion.button
       onClick={onClick}
-      disabled={disabled}
-      className={`w-full flex items-center justify-between gap-4 p-4 rounded-xl border text-left font-sans text-sm md:text-base font-semibold transition-colors duration-300 pointer-events-auto outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:border-transparent ${buttonStyle}`}
+      disabled={disabled || isRevealed}
+      whileTap={!disabled && !isRevealed ? { scale: 0.98 } : {}}
+      className={containerClasses}
     >
-      <div className="flex items-center gap-4">
-        <span className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center font-display font-bold text-xs md:text-sm ${badgeStyle}`}>
-          {letter}
-        </span>
-        <span className="leading-tight">{text}</span>
-      </div>
-      {icon}
-    </AnimatedButton>
+      <div className={badgeClasses}>{letter}</div>
+      <span className={textClasses}>{text}</span>
+      {statusIcon}
+    </motion.button>
   );
 }

@@ -77,7 +77,8 @@ export default function QuizmasterPanel() {
     buzzerQueue, currentTeamIdx, incorrectTeams,
     startQuestion, markCorrect, markIncorrect, revealAnswer, nextQuestion,
     timerSeconds, timerDuration, setTimerDuration, openProjector, pointsPerCorrect,
-    connectedTeams, lanAddress, updateTeamScore
+    connectedTeams, lanAddress, updateTeamScore,
+    lockedOptionIdx, toggleLockedOption
   } = useQuiz();
 
   const [showQR, setShowQR] = useState(false);
@@ -205,24 +206,19 @@ export default function QuizmasterPanel() {
               </div>
             )}
 
-            {/* Options — quizmaster ALWAYS sees correct answer highlighted */}
+            {/* Options — quizmaster ALWAYS sees correct answer highlighted via revealCorrect=true, and can lock-in answers */}
             <div className="flex flex-col gap-2">
               {question.options.map((option, idx) => (
-                <div key={idx} className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-sans font-semibold transition-all ${
-                  idx === question.correctAnswer
-                    ? 'border-emerald-500/40 bg-emerald-950/20 text-emerald-200'
-                    : 'border-white/5 bg-slate-950/30 text-gray-300'
-                }`}>
-                  <span className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center font-display font-bold text-xs ${
-                    idx === question.correctAnswer ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-400'
-                  }`}>
-                    {letters[idx]}
-                  </span>
-                  <span className="leading-tight">{option}</span>
-                  {idx === question.correctAnswer && (
-                    <span className="ml-auto text-emerald-400 text-xs font-display font-bold">✓ CORRECT</span>
-                  )}
-                </div>
+                <OptionButton
+                  key={idx}
+                  letter={letters[idx]}
+                  text={option}
+                  isCorrect={idx === question.correctAnswer}
+                  revealCorrect={true}
+                  showResult={true}
+                  isSelected={lockedOptionIdx === idx}
+                  onClick={() => toggleLockedOption(idx)}
+                />
               ))}
             </div>
 
